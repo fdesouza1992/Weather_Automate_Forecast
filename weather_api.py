@@ -6,6 +6,8 @@ import tkinter as tk
 from tkinter import messagebox
 from dotenv import load_dotenv
 import os
+from PIL import Image, ImageDraw, ImageFont
+from datetime import datetime
 
 # Load API key from .env file
 def configure():
@@ -54,11 +56,62 @@ def get_weather():
             result_box.insert(tk.END, f"{humidity}%\n")
             result_box.insert(tk.END, f"Weather Description: ", "bold")
             result_box.insert(tk.END, f"{weather_desc}\n")
+            save_weather_image(city_name, 
+                               temp_celsius, 
+                               temp_fahrenheit, 
+                               pressure, 
+                               humidity, 
+                               weather_desc)
         else:
             messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
 
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Failed to retrieve data:\n{e}")
+
+# Function to save weather data as an image
+def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
+    # Image size & background
+    width, height = 600, 350
+    img = Image.new('RGB', (width, height), color='#add8e6')
+    draw = ImageDraw.Draw(img)
+
+    # Load fonts
+    try:
+        font_title = ImageFont.truetype("Helvetica", 28)
+        font_bold = ImageFont.truetype("Helvetica", 22)
+        font_regular = ImageFont.truetype("Helvetica", 22)
+    except IOError:
+        font_title = ImageFont.load_default()
+        font_bold = ImageFont.load_default()
+        font_regular = ImageFont.load_default()
+
+    # Title
+    title = f"Weather for {city}"
+    title_width = draw.textlength(title, font=font_title)
+    draw.text(((width - title_width) / 2, 30), title, fill="black", font=font_title)
+
+    # Data lines with bold label + regular value
+    y_start = 100
+    spacing = 40
+
+    def draw_label_value(label, value, y):
+        label_width = draw.textlength(label, font=font_bold)
+        value_width = draw.textlength(value, font=font_regular)
+        total_width = label_width + value_width
+        x_start = (width - total_width) / 2
+
+        draw.text((x_start, y), label, fill="black", font=font_bold)
+        draw.text((x_start + label_width, y), value, fill="black", font=font_regular)
+
+    draw_label_value("Temperature: ", f"{temp_c}°C / {temp_f}°F", y_start)
+    draw_label_value("Pressure: ", f"{pressure} hPa", y_start + spacing)
+    draw_label_value("Humidity: ", f"{humidity}%", y_start + spacing * 2)
+    draw_label_value("Description: ", description, y_start + spacing * 3)
+
+    # Save image
+    filename = f"weather_{city}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+    img.save(filename)
+    print(f"Weather image saved as: {filename}")
 
 # Create a GUI window
 root = tk.Tk()
