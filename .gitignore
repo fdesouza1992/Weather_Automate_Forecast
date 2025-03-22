@@ -1,0 +1,15 @@
+# Purpose: Ignore files and directories in Git
+
+# Ignore Python environment files
+venv/
+__pycache__/
+*.pyc
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore environment variables file
+.env
