@@ -32,6 +32,7 @@ def get_weather():
         x = response.json()
         
         if x["cod"] != "404":
+            result_box.pack(pady=10)
             y = x["main"]
             temp_kelvin = y["temp"]
             temp_celsius = round(temp_kelvin - 273.15, 2)                       # Convert to Celsius
@@ -41,11 +42,18 @@ def get_weather():
             humidity = y["humidity"]
             weather_desc = x["weather"][0]["description"].capitalize()
 
-            # Display results in GUI
-            result_text.set(f"Temperature: {temp_celsius}°C / {temp_fahrenheit}°F\n"
-                            f"Pressure: {pressure} hPa\n"
-                            f"Humidity: {humidity}%\n"
-                            f"Description: {weather_desc.capitalize()}")
+            #Clear previous text
+            result_box.delete("1.0", tk.END)
+
+            #Insert styled text
+            result_box.insert(tk.END, f"Temperature: ", "bold")
+            result_box.insert(tk.END, f"{temp_celsius}°C / {temp_fahrenheit}°F\n")
+            result_box.insert(tk.END, f"Pressure: ", "bold")
+            result_box.insert(tk.END, f"{pressure} hPa\n")
+            result_box.insert(tk.END, f"Humidity: ", "bold")
+            result_box.insert(tk.END, f"{humidity}%\n")
+            result_box.insert(tk.END, f"Weather Description: ", "bold")
+            result_box.insert(tk.END, f"{weather_desc}\n")
         else:
             messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
 
@@ -80,20 +88,23 @@ get_weather_button = tk.Button(root,
                                relief=tk.RAISED,
                                command=get_weather)
 
-# Create a label to display the result
-result_text = tk.StringVar()
-result_label = tk.Label(root, 
-                        textvariable=result_text,
-                        font=("Helvetica", 14),
-                        bg="#add8e6",
-                        justify=tk.CENTER, 
-                        wraplength=450)
+#Create a text widhet to display the result
+result_box = tk.Text(root, 
+                     font=("Helvetica", 14),
+                     bg="#add8e6",
+                     height=10, 
+                     width=50,
+                     wrap=tk.WORD,
+                     relief=tk.FLAT,
+                     bd=0)
+result_box.tag_configure("bold", 
+                         font=("Helvetica", 14, "bold"),
+                         justify=tk.CENTER)
 
 # Organize Layout
 city_label.pack(pady=10)
 city_entry.pack(pady=5, ipady=5)
 get_weather_button.pack(pady=10, ipadx=10, ipady=5)
-result_label.pack(pady=10)
 
 # Run the main loop
 root.mainloop()
