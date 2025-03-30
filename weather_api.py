@@ -45,15 +45,18 @@ def process_weather_data(data):
         return None
 
 # Function to update the GUI with weather data
-def display_weather(weather_info, city_name):
+def display_weather(weather_info, city_name, state_code):
     if weather_info:
+        # Resize the window to fit content better
+        root.geometry("500x550") 
+        
         result_box.pack(pady=10)
         # Clear previous text
         result_box.delete("1.0", tk.END)
 
         #Format city name to uppercase first letter of each word
         formatted_city_name = city_name.title()
-        
+        #Format state code to uppercase
         formatted_state_code = state_entry.get().strip().upper()
 
         # Insert styled text
@@ -77,11 +80,12 @@ def get_weather():
     if not city_name or not state_code:
         messagebox.showerror("Input Error", "Please enter a valid city name and state code.")
         return
+        
     try:
         data = fetch_weather_data(city_name, state_code)
         weather_info = process_weather_data(data)
         if weather_info:
-            display_weather(weather_info, city_name)
+            display_weather(weather_info, city_name, state_code)
         else:
             messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
     except requests.exceptions.RequestException as e:
@@ -90,7 +94,7 @@ def get_weather():
 # Function for GUI initialization
 def init_gui():
     # Initialize global variables
-    global state_entry, city_entry, result_box
+    global root, state_entry, city_entry, result_box
 
     # Create a GUI window
     root = tk.Tk()
