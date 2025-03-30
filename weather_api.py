@@ -12,6 +12,16 @@ from settings import IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, LINE_SP
 
 current_weather = {}
 
+# Function to add hover effect to buttons
+def add_hover_effect(button, hover_bg="#cce7ff", default_bg="white", hover_fg="black", default_fg="black"):
+    def on_enter(e):
+        button.configure(background=hover_bg, foreground=hover_fg)
+    def on_leave(e):
+        button.configure(background=default_bg, foreground=default_fg)
+
+    button.bind("<Enter>", on_enter)
+    button.bind("<Leave>", on_leave)
+
 # Load API key from .env file
 def configure():
     load_dotenv()
@@ -143,12 +153,19 @@ def init_gui():
     get_weather_button = tk.Button(root,
                                     text="Get Weather",
                                     font=("helvetica", 14, "bold"),
-                                    bg="#008CBA",
-                                    fg="#000000",
+                                    bg="white",
+                                    fg="black",
+                                    activebackground="white",
+                                    activeforeground="black",
+                                    relief=tk.GROOVE,
+                                    highlightthickness=0,
+                                    bd=2,
                                     padx=10,
                                     pady=5,
-                                    relief=tk.RAISED,
                                     command=get_weather)
+    
+    # Add hover effect to the button
+    add_hover_effect(get_weather_button, hover_bg="#c8a2c8", hover_fg="#4b0082")
     
     # Frame to hold export buttons side-by-side
     export_button_frame = tk.Frame(root, bg="#add8e6")
@@ -159,24 +176,36 @@ def init_gui():
                                 font=("helvetica", 12, "bold"),
                                 bg="white",
                                 fg="black",
-                                activebackground="#cce7ff",
+                                activebackground="white",
                                 activeforeground="black",
-                                relief=tk.RAISED,
+                                relief=tk.GROOVE,
+                                highlightthickness=0,
+                                bd=2,
                                 padx=10,
                                 pady=5,
                                 command=lambda: export_current_weather("story"))
+    
+    # Add hover effect to the button
+    add_hover_effect(export_story_button, hover_bg="#c8a2c8", hover_fg="#4b0082")
 
+    # Create a button to export weather data
     export_post_button = tk.Button(export_button_frame,
                                text="Export as Post",
                                font=("helvetica", 12, "bold"),
                                bg="white",
                                fg="black",
-                               activebackground="#cce7ff",
+                               activebackground="white",
                                activeforeground="black",
                                relief=tk.RAISED,
+                               highlightthickness=0,
+                               bd=2,
                                padx=10,
                                pady=5,
                                command=lambda: export_current_weather("post"))
+    
+    # Add hover effect to the button
+    add_hover_effect(export_post_button, hover_bg="#c8a2c8", hover_fg="#4b0082")
+
     # Side-by-side layout inside the frame
     export_story_button.pack(side=tk.LEFT, padx=10)
     export_post_button.pack(side=tk.RIGHT, padx=10)
