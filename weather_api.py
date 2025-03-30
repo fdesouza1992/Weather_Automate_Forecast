@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
+from settings import IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, LINE_SPACING, TEXT_COLOR
 
 # Load API key from .env file
 def configure():
@@ -80,7 +81,7 @@ def get_weather():
     if not city_name or not state_code:
         messagebox.showerror("Input Error", "Please enter a valid city name and state code.")
         return
-        
+
     try:
         data = fetch_weather_data(city_name, state_code)
         weather_info = process_weather_data(data)
@@ -158,6 +159,51 @@ def init_gui():
     get_weather_button.pack(pady=10, ipadx=10, ipady=5)
     
     return root
+
+# Function to save the result as an image
+def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
+    img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=BACKGROUND_COLOR)
+    draw = ImageDraw.Draw(img)
+
+    # Load fonts
+    def load_font(size_tuple):
+        try:
+            return ImageFont.truetype("Helvetica", size_tuple[1])
+        except IOError:
+            return ImageFont.load_default()
+
+    font_title = load_font(FONTS["title"])
+    font_bold = load_font(FONTS["bold"])
+    font_regular = load_font(FONTS["regular"])
+
+    # Title
+    title = f"Weather for {city.title()}"
+    title_width = draw.textlength(title, font=font_title)
+    draw.text(((IMAGE_WIDTH - title_width) / 2, 30), title, fill=TEXT_COLOR, font=font_title)
+
+    # Data lines
+    y_start = 100
+
+    def draw_label_value(label, value, y):
+        label_width = draw.textlength(label, font=font_bold)
+        value_width = draw.textlength(value, font=font_regular)
+        total_width = label_width + value_width
+        x_start = (IMAGE_WIDTH - total_width) / 2
+
+        draw.text((x_start, y), label, fill=TEXT_COLOR, font=font_bold)
+        draw.text((x_start + label_width, y), value, fill=TEXT_COLOR, font=font_regular)
+
+    draw_label_value("Temperature: ", f"{temp_c}°C / {temp_f}°F", y_start)
+    draw_label_value("Pressure: ", f"{pressure} hPa", y_start + LINE_SPACING)
+    draw_label_value("Humidity: ", f"{humidity}%", y_start + LINE_SPACING * 2)
+    draw_label_value("Description: ", description, y_start + LINE_SPACING * 3)
+
+    # Save image
+    filename = f"{city}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(script_dir, filename)
+    img.save(full_path)
+    print(f"Weather image saved as: {full_path}")
 
 # Main() Function Entry Point
 def main():
