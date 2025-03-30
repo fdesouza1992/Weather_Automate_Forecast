@@ -13,151 +13,134 @@ from datetime import datetime
 def configure():
     load_dotenv()
 
-# Call the configure function
-configure()
-
-# Function to fetch weather data
-def get_weather():
+# Fetch weather data from OpenWeatherMap API
+def fetch_weather_data(city_name):
     api_key = os.getenv("API_KEY")
     base_url = "http://api.openweathermap.org/data/2.5/weather?"
-    
+    complete_url = f"{base_url}appid={api_key}&q={city_name}"
+    response = requests.get(complete_url)
+    return response.json()
+
+#Function to process weather data and format it for display
+def process_weather_data(data):
+    if data["cod"] != "404":
+        main = data["main"]
+        weather_desc = data["weather"][0]["description"].capitalize()
+        temp_kelvin = main["temp"]
+        temp_celsius = round(temp_kelvin - 273.15, 2)                       # Convert to Celsius
+        temp_fahrenheit = round((temp_kelvin - 273.15) * 9/5 + 32, 2)       # Convert to Fahrenheit
+        pressure = main["pressure"]
+        humidity = main["humidity"]
+
+        return {
+            "temp_celsius": temp_celsius,
+            "temp_fahrenheit": temp_fahrenheit,
+            "pressure": pressure,
+            "humidity": humidity,
+            "description": weather_desc
+        }
+    else:
+        return None
+
+# Function to update the GUI with weather data
+def display_weather(weather_info, city_name):
+    if weather_info:
+        result_box.pack(pady=10)
+        # Clear previous text
+        result_box.delete("1.0", tk.END)
+        # Insert styled text
+        result_box.insert(tk.END, f"Weather for {city_name}:\n", "bold")
+        result_box.insert(tk.END, f"Temperature: ", "bold")
+        result_box.insert(tk.END, f"{weather_info['temp_celsius']}°C / {weather_info['temp_fahrenheit']}°F\n")
+        result_box.insert(tk.END, f"Pressure: ", "bold")
+        result_box.insert(tk.END, f"{weather_info['pressure']} hPa\n")
+        result_box.insert(tk.END, f"Humidity: ", "bold")
+        result_box.insert(tk.END, f"{weather_info['humidity']}%\n")
+        result_box.insert(tk.END, f"Weather Description: ", "bold")
+        result_box.insert(tk.END, f"{weather_info['description']}\n")
+    else:
+        messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
+
+# Function trigged by "Get Weather" button
+def get_weather():
     city_name = city_entry.get().strip()
-    
     if not city_name:
         messagebox.showerror("Input Error", "Please enter a valid city name.")
         return
-
-    complete_url = f"{base_url}appid={api_key}&q={city_name}"
-    
     try:
-        response = requests.get(complete_url)
-        x = response.json()
-        
-        if x["cod"] != "404":
-            result_box.pack(pady=10)
-            y = x["main"]
-            temp_kelvin = y["temp"]
-            temp_celsius = round(temp_kelvin - 273.15, 2)                       # Convert to Celsius
-            temp_fahrenheit = round((temp_kelvin - 273.15) * 9/5 + 32, 2)       # Convert to Fahrenheit
-            
-            pressure = y["pressure"]
-            humidity = y["humidity"]
-            weather_desc = x["weather"][0]["description"].capitalize()
-
-            #Clear previous text
-            result_box.delete("1.0", tk.END)
-
-            #Insert styled text
-            result_box.insert(tk.END, f"Temperature: ", "bold")
-            result_box.insert(tk.END, f"{temp_celsius}°C / {temp_fahrenheit}°F\n")
-            result_box.insert(tk.END, f"Pressure: ", "bold")
-            result_box.insert(tk.END, f"{pressure} hPa\n")
-            result_box.insert(tk.END, f"Humidity: ", "bold")
-            result_box.insert(tk.END, f"{humidity}%\n")
-            result_box.insert(tk.END, f"Weather Description: ", "bold")
-            result_box.insert(tk.END, f"{weather_desc}\n")
-            save_weather_image(city_name, 
-                               temp_celsius, 
-                               temp_fahrenheit, 
-                               pressure, 
-                               humidity, 
-                               weather_desc)
+        data = fetch_weather_data(city_name)
+        weather_info = process_weather_data(data)
+        if weather_info:
+            display_weather(weather_info, city_name)
         else:
             messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
-
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Failed to retrieve data:\n{e}")
 
-# Function to save weather data as an image
-def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
-    # Image size & background
-    width, height = 600, 350
-    img = Image.new('RGB', (width, height), color='#add8e6')
-    draw = ImageDraw.Draw(img)
+# Function for GUI initialization
+def init_gui():
+    global city_entry, result_box
+    # Create a GUI window
+    root = tk.Tk()
+    root.title("Weather App")
+    root.geometry("500x350")
+    root.configure(bg="#add8e6")
+    root.resizable(False, False)
 
-    # Load fonts
-    try:
-        font_title = ImageFont.truetype("Helvetica", 28)
-        font_bold = ImageFont.truetype("Helvetica", 22)
-        font_regular = ImageFont.truetype("Helvetica", 22)
-    except IOError:
-        font_title = ImageFont.load_default()
-        font_bold = ImageFont.load_default()
-        font_regular = ImageFont.load_default()
+    # Create a label and entry widget
+    city_label = tk.Label(root,
+                            text="Enter City Name:",
+                            anchor=tk.CENTER,
+                            font=("helvetica", 22, "bold"),
+                            bg="#add8e6")
 
-    # Title
-    title = f"Weather for {city}"
-    title_width = draw.textlength(title, font=font_title)
-    draw.text(((width - title_width) / 2, 30), title, fill="black", font=font_title)
+    city_entry = tk.Entry(root,
+                            width=35,
+                            font=("helvetica", 14))
 
-    # Data lines with bold label + regular value
-    y_start = 100
-    spacing = 40
+    # Create a button to fetch weather data
+    get_weather_button = tk.Button(root,
+                                    text="Get Weather",
+                                    font=("helvetica", 14, "bold"),
+                                    bg="#008CBA",
+                                    fg="#000000",
+                                    padx=10,
+                                    pady=5,
+                                    relief=tk.RAISED,
+                                    command=get_weather)
+    
+    # Create a text widget to display the result
+    result_box = tk.Text(root,
+                            font=("helvetica", 14),
+                            bg="#add8e6",
+                            height=10,
+                            width=50,
+                            wrap=tk.WORD,
+                            relief=tk.FLAT,
+                            bd=0)
+    result_box.tag_configure("bold",
+                            font=("helvetica", 14, "bold"),
+                            justify=tk.CENTER)
 
-    def draw_label_value(label, value, y):
-        label_width = draw.textlength(label, font=font_bold)
-        value_width = draw.textlength(value, font=font_regular)
-        total_width = label_width + value_width
-        x_start = (width - total_width) / 2
+    # Organize Layout
+    city_label.pack(pady=10)
+    city_entry.pack(pady=5, ipady=5)
+    get_weather_button.pack(pady=10, ipadx=10, ipady=5)
+    
+    return root
 
-        draw.text((x_start, y), label, fill="black", font=font_bold)
-        draw.text((x_start + label_width, y), value, fill="black", font=font_regular)
+# Main() Function Entry Point
+def main():
+    # Call the configure function
+    configure()
 
-    draw_label_value("Temperature: ", f"{temp_c}°C / {temp_f}°F", y_start)
-    draw_label_value("Pressure: ", f"{pressure} hPa", y_start + spacing)
-    draw_label_value("Humidity: ", f"{humidity}%", y_start + spacing * 2)
-    draw_label_value("Description: ", description, y_start + spacing * 3)
+    # Initialize GUI
+    root = init_gui()
+    
+    # Run the main loop
+    root.mainloop()
 
-    # Save image
-    filename = f"weather_{city}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-    img.save(filename)
-    print(f"Weather image saved as: {filename}")
+# Ensure main() runs only when this script is executed directly
+if __name__ == "__main__":
+    main()
 
-# Create a GUI window
-root = tk.Tk()
-root.title("Weather App")
-root.geometry("500x350")
-root.configure(bg="#add8e6")
-root.resizable(False, False)
-
-# Create a label and entry widget
-city_label = tk.Label(root, 
-                      text="Enter City Name:",
-                      anchor=tk.CENTER,
-                      font=("Helvetica", 22, "bold"),
-                      bg="#add8e6")
-city_entry = tk.Entry(root, 
-                      width=35,
-                      font=("Helvetica", 14))
-
-# Create a button to fetch weather data
-get_weather_button = tk.Button(root, 
-                               text="Get Weather", 
-                               font=("Helvetica", 14, "bold"),
-                               bg="#008CBA",
-                               fg="#000000",
-                               padx=10,
-                               pady=5,
-                               relief=tk.RAISED,
-                               command=get_weather)
-
-#Create a text widhet to display the result
-result_box = tk.Text(root, 
-                     font=("Helvetica", 14),
-                     bg="#add8e6",
-                     height=10, 
-                     width=50,
-                     wrap=tk.WORD,
-                     relief=tk.FLAT,
-                     bd=0)
-result_box.tag_configure("bold", 
-                         font=("Helvetica", 14, "bold"),
-                         justify=tk.CENTER)
-
-# Organize Layout
-city_label.pack(pady=10)
-city_entry.pack(pady=5, ipady=5)
-get_weather_button.pack(pady=10, ipadx=10, ipady=5)
-
-# Run the main loop
-root.mainloop()
