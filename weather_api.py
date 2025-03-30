@@ -14,10 +14,12 @@ def configure():
     load_dotenv()
 
 # Fetch weather data from OpenWeatherMap API
-def fetch_weather_data(city_name):
+def fetch_weather_data(city_name, state_code):
     api_key = os.getenv("API_KEY")
     base_url = "http://api.openweathermap.org/data/2.5/weather?"
-    complete_url = f"{base_url}appid={api_key}&q={city_name}"
+    query = f"{city_name}, {state_code}, US"
+    complete_url = f"{base_url}appid={api_key}&q={query}"
+
     response = requests.get(complete_url)
     return response.json()
 
@@ -51,9 +53,11 @@ def display_weather(weather_info, city_name):
 
         #Format city name to uppercase first letter of each word
         formatted_city_name = city_name.title()
+        
+        formatted_state_code = state_entry.get().strip().upper()
 
         # Insert styled text
-        result_box.insert(tk.END, f"\nWeather for {formatted_city_name}:\n\n", "heading")
+        result_box.insert(tk.END, f"\nWeather for {formatted_city_name}, {formatted_state_code}:\n\n", "heading")
         result_box.insert(tk.END, f"Temperature: ", "bold")
         result_box.insert(tk.END, f"{weather_info['temp_celsius']}°C / {weather_info['temp_fahrenheit']}°F\n")
         result_box.insert(tk.END, f"Pressure: ", "bold")
@@ -68,11 +72,13 @@ def display_weather(weather_info, city_name):
 # Function trigged by "Get Weather" button
 def get_weather():
     city_name = city_entry.get().strip()
-    if not city_name:
-        messagebox.showerror("Input Error", "Please enter a valid city name.")
+    state_code = state_entry.get().strip().upper()
+
+    if not city_name or not state_code:
+        messagebox.showerror("Input Error", "Please enter a valid city name and state code.")
         return
     try:
-        data = fetch_weather_data(city_name)
+        data = fetch_weather_data(city_name, state_code)
         weather_info = process_weather_data(data)
         if weather_info:
             display_weather(weather_info, city_name)
@@ -83,7 +89,9 @@ def get_weather():
 
 # Function for GUI initialization
 def init_gui():
-    global city_entry, result_box
+    # Initialize global variables
+    global state_entry, city_entry, result_box
+
     # Create a GUI window
     root = tk.Tk()
     root.title("Weather App")
@@ -93,12 +101,21 @@ def init_gui():
 
     # Create a label and entry widget
     city_label = tk.Label(root,
-                            text="Enter City Name:",
+                            text="Enter City Name (e.g. Boston):",
                             anchor=tk.CENTER,
-                            font=("helvetica", 24, "bold"),
+                            font=("helvetica", 22, "bold"),
                             bg="#add8e6")
 
     city_entry = tk.Entry(root,
+                            width=35,
+                            font=("helvetica", 14))
+
+    state_label = tk.Label(root,
+                            text="Enter State Code (e.g., CA, NY):",
+                            anchor=tk.CENTER,
+                            font=("helvetica", 22, "bold"),
+                            bg="#add8e6")
+    state_entry = tk.Entry(root,
                             width=35,
                             font=("helvetica", 14))
 
@@ -132,6 +149,8 @@ def init_gui():
     # Organize Layout
     city_label.pack(pady=10)
     city_entry.pack(pady=5, ipady=5)
+    state_label.pack(pady=10)
+    state_entry.pack(pady=5, ipady=5)
     get_weather_button.pack(pady=10, ipadx=10, ipady=5)
     
     return root
