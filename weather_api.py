@@ -10,7 +10,11 @@ from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from settings import IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, LINE_SPACING, TEXT_COLOR, BUTTON_COLOR, EXPORT_FORMATS
 
+# Holds the most recent weather data for exporting
 current_weather = {}
+
+# Will hold up to 5 pairs of city and state code (city_entry, state_entry)
+location_entries = []
 
 # Function to add hover effect to buttons
 def add_hover_effect(button, hover_bg="#cce7ff", default_bg="white", hover_fg="black", default_fg="black"):
@@ -61,11 +65,9 @@ def process_weather_data(data):
 def display_weather(weather_info, city_name, state_code):
     if weather_info:
         # Resize the window to fit content better
-        root.geometry("500x550") 
+        root.geometry("750x550") 
         
         result_box.pack(pady=10)
-        # Clear previous text
-        result_box.delete("1.0", tk.END)
 
         # Create export buttons
         export_button_frame.pack(pady=5)
@@ -73,7 +75,7 @@ def display_weather(weather_info, city_name, state_code):
         #Format city name to uppercase first letter of each word
         formatted_city_name = city_name.title()
         #Format state code to uppercase
-        formatted_state_code = state_entry.get().strip().upper()
+        formatted_state_code = state_code.upper()
 
         # Insert styled text
         result_box.insert(tk.END, f"\nWeather for {formatted_city_name}, {formatted_state_code}:\n\n", "heading")
@@ -90,33 +92,44 @@ def display_weather(weather_info, city_name, state_code):
 
 # Function trigged by "Get Weather" button
 def get_weather():
-    city_name = city_entry.get().strip()
-    state_code = state_entry.get().strip().upper()
+    global current_weather
 
-    if not city_name or not state_code:
-        messagebox.showerror("Input Error", "Please enter a valid city name and state code.")
+    if not location_entries:
+        messagebox.showerror("Input Error", "Please add at least one location.")
         return
 
-    try:
-        data = fetch_weather_data(city_name, state_code)
-        weather_info = process_weather_data(data)
-        if weather_info:
-            display_weather(weather_info, city_name, state_code)
+    result_box.pack(pady=10)
+    result_box.delete("1.0", tk.END)  # Clear previous output
 
-            # Track current weather data for export buttons
-            global current_weather
-            current_weather = {
-               "city": city_name,
-                "temp_c": weather_info['temp_celsius'],
-                "temp_f": weather_info['temp_fahrenheit'],
-                "pressure": weather_info['pressure'],
-                "humidity": weather_info['humidity'],
-                "description": weather_info['description']
-            }
-        else:
-            messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
-    except requests.exceptions.RequestException as e:
-        messagebox.showerror("Error", f"Failed to retrieve data:\n{e}")
+    for city_entry, state_entry in location_entries:
+        city_name = city_entry.get().strip()
+        state_code = state_entry.get().strip().upper()
+
+        if not city_name or not state_code:
+            messagebox.showerror("Input Error", "Please fill in both city and state for all entries.")
+            return
+
+        try:
+            data = fetch_weather_data(city_name, state_code)
+            weather_info = process_weather_data(data)
+            if weather_info:
+                # Accumulate and show multiple weather reports
+                display_weather(weather_info, city_name, state_code)
+
+                # Save the first valid one for exporting
+                if not current_weather:
+                    current_weather = {
+                        "city": city_name,
+                        "temp_c": weather_info['temp_celsius'],
+                        "temp_f": weather_info['temp_fahrenheit'],
+                        "pressure": weather_info['pressure'],
+                        "humidity": weather_info['humidity'],
+                        "description": weather_info['description']
+                    }
+            else:
+                result_box.insert(tk.END, f"\nWeather not found for {city_name}, {state_code}\n", "bold")
+        except requests.exceptions.RequestException as e:
+            result_box.insert(tk.END, f"\nFailed to retrieve data for {city_name}, {state_code}:\n{e}\n", "bold")
 
 # Function for GUI initialization
 def init_gui():
@@ -129,25 +142,29 @@ def init_gui():
     root.configure(bg="#add8e6")
     root.resizable(False, False)
 
-    # Create a label and entry widget
-    city_label = tk.Label(root,
-                            text="Enter City Name (e.g. Boston):",
-                            anchor=tk.CENTER,
-                            font=("helvetica", 22, "bold"),
-                            bg="#add8e6")
+    # Frame to hold all dynamic location input rows
+    location_frame = tk.Frame(root, bg="#add8e6")
+    location_frame.pack(pady=10)
 
-    city_entry = tk.Entry(root,
-                            width=35,
-                            font=("helvetica", 14))
+    add_location_input(location_frame)          # Add the first location input row
 
-    state_label = tk.Label(root,
-                            text="Enter State Code (e.g., CA, NY):",
-                            anchor=tk.CENTER,
-                            font=("helvetica", 22, "bold"),
-                            bg="#add8e6")
-    state_entry = tk.Entry(root,
-                            width=35,
-                            font=("helvetica", 14))
+    # Add the + Location button
+    add_location_button = tk.Button(root,
+                                    text="+ Location",
+                                    font=("helvetica", 14, "bold"),
+                                    bg="white",
+                                    fg="black",
+                                    activebackground="white",
+                                    activeforeground="black",
+                                    relief=tk.GROOVE,
+                                    highlightthickness=0,
+                                    bd=2,
+                                    padx=10,
+                                    pady=5,
+                                    command=lambda: add_location_input(root))
+
+    # Add hover effect to the button
+    add_hover_effect(add_location_button, hover_bg="#c8a2c8", hover_fg="#4b0082") 
 
     # Create a button to fetch weather data
     get_weather_button = tk.Button(root,
@@ -225,17 +242,13 @@ def init_gui():
     result_box.tag_configure("heading",
                             font=("helvetica", 20, "bold"),
                             justify=tk.CENTER)
-
-    # Organize Layout
-    city_label.pack(pady=10)
-    city_entry.pack(pady=5, ipady=5)
-    state_label.pack(pady=10)
-    state_entry.pack(pady=5, ipady=5)
-    get_weather_button.pack(pady=10, ipadx=10, ipady=5)
+  
+    add_location_button.pack(side=tk.LEFT, padx=10)
+    get_weather_button.pack(side=tk.RIGHT, padx=10)
 
     # Center the window on the screen
-    window_width = 500
-    window_height = 350
+    window_width = 700
+    window_height = 500
 
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -246,6 +259,31 @@ def init_gui():
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
     return root
+
+# Function to add a new location input row
+def add_location_input(frame):
+    if len (location_entries) >= 5:
+        messagebox.showerror("Input Limit", "You can only add up to 5 locations.")
+        return
+        
+    # Create a container frame for each row
+    row_frame = tk.Frame(frame, bg="#add8e6")
+    row_frame.pack(pady=5)
+
+    # Create City Label + Entry
+    city_label = tk.Label(row_frame, text="City:", font=("helvetica", 12, "bold"), bg="#add8e6")
+    city_label.grid(row=0, column=0, sticky="w")
+    city_entry = tk.Entry(row_frame, width=20, font=("helvetica", 14))
+    city_entry.grid(row=1, column=0, padx=5)
+
+    # Create State Label + Entry
+    state_label = tk.Label(row_frame, text="State:", font=("helvetica", 12, "bold"), bg="#add8e6")
+    state_label.grid(row=0, column=1, sticky="w")
+    state_entry = tk.Entry(row_frame, width=5, font=("helvetica", 14))
+    state_entry.grid(row=1, column=1, padx=5)
+
+    # Show the pair in the list
+    location_entries.append((city_entry, state_entry))    
 
 # Function to save the result as an image
 def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
