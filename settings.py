@@ -5,7 +5,9 @@ IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 500
 
 # Background Color
-BACKGROUND_COLOR = "add8e6"
+BACKGROUND_COLOR = "#add8e6"
+
+# Button Colors
 
 # Font Settings
 FONTS = {

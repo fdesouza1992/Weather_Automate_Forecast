@@ -87,6 +87,15 @@ def get_weather():
         weather_info = process_weather_data(data)
         if weather_info:
             display_weather(weather_info, city_name, state_code)
+
+            # Save the weather data as an image
+            save_weather_image(city_name, 
+                                weather_info['temp_celsius'], 
+                                weather_info['temp_fahrenheit'],
+                                weather_info['pressure'], 
+                                weather_info['humidity'], 
+                                weather_info['description'])
+            messagebox.showinfo("Success", "Weather data saved as an image.")
         else:
             messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
     except requests.exceptions.RequestException as e:
@@ -162,8 +171,10 @@ def init_gui():
 
 # Function to save the result as an image
 def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
+
     img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=BACKGROUND_COLOR)
     draw = ImageDraw.Draw(img)
+    print(f"Creating image for {city}...")
 
     # Load fonts
     def load_font(size_tuple):
