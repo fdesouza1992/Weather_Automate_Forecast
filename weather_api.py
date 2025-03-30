@@ -48,8 +48,12 @@ def display_weather(weather_info, city_name):
         result_box.pack(pady=10)
         # Clear previous text
         result_box.delete("1.0", tk.END)
+
+        #Format city name to uppercase first letter of each word
+        formatted_city_name = city_name.title()
+
         # Insert styled text
-        result_box.insert(tk.END, f"Weather for {city_name}:\n", "bold")
+        result_box.insert(tk.END, f"\nWeather for {formatted_city_name}:\n\n", "heading")
         result_box.insert(tk.END, f"Temperature: ", "bold")
         result_box.insert(tk.END, f"{weather_info['temp_celsius']}°C / {weather_info['temp_fahrenheit']}°F\n")
         result_box.insert(tk.END, f"Pressure: ", "bold")
@@ -91,7 +95,7 @@ def init_gui():
     city_label = tk.Label(root,
                             text="Enter City Name:",
                             anchor=tk.CENTER,
-                            font=("helvetica", 22, "bold"),
+                            font=("helvetica", 24, "bold"),
                             bg="#add8e6")
 
     city_entry = tk.Entry(root,
@@ -120,6 +124,9 @@ def init_gui():
                             bd=0)
     result_box.tag_configure("bold",
                             font=("helvetica", 14, "bold"),
+                            justify=tk.CENTER)
+    result_box.tag_configure("heading",
+                            font=("helvetica", 20, "bold"),
                             justify=tk.CENTER)
 
     # Organize Layout
