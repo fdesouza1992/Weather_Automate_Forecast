@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
-from settings import IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, LINE_SPACING, TEXT_COLOR
+from settings import IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, LINE_SPACING, TEXT_COLOR, BUTTON_COLOR, EXPORT_FORMATS
+
+current_weather = {}
 
 # Load API key from .env file
 def configure():
@@ -55,6 +57,10 @@ def display_weather(weather_info, city_name, state_code):
         # Clear previous text
         result_box.delete("1.0", tk.END)
 
+        # Create export buttons
+        export_story_button.pack(pady=5, ipadx=8, ipady=2)
+        export_post_button.pack(pady=5, ipadx=8, ipady=2)
+
         #Format city name to uppercase first letter of each word
         formatted_city_name = city_name.title()
         #Format state code to uppercase
@@ -88,14 +94,23 @@ def get_weather():
         if weather_info:
             display_weather(weather_info, city_name, state_code)
 
-            # Save the weather data as an image
-            save_weather_image(city_name, 
-                                weather_info['temp_celsius'], 
-                                weather_info['temp_fahrenheit'],
-                                weather_info['pressure'], 
-                                weather_info['humidity'], 
-                                weather_info['description'])
-            messagebox.showinfo("Success", "Weather data saved as an image.")
+            # Track current weather data for export buttons
+            global current_weather
+            current_weather = {
+               "city": city_name,
+                "temp_c": weather_info['temp_celsius'],
+                "temp_f": weather_info['temp_fahrenheit'],
+                "pressure": weather_info['pressure'],
+                "humidity": weather_info['humidity'],
+                "description": weather_info['description']
+            }
+            # # Save the weather data as an image
+            # save_weather_image(city_name, 
+            #                     weather_info['temp_celsius'], 
+            #                     weather_info['temp_fahrenheit'],
+            #                     weather_info['pressure'], 
+            #                     weather_info['humidity'], 
+            #                     weather_info['description'])
         else:
             messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
     except requests.exceptions.RequestException as e:
@@ -104,12 +119,11 @@ def get_weather():
 # Function for GUI initialization
 def init_gui():
     # Initialize global variables
-    global root, state_entry, city_entry, result_box
+    global root, state_entry, city_entry, result_box, export_story_button, export_post_button
 
     # Create a GUI window
     root = tk.Tk()
     root.title("Weather App")
-    root.geometry("500x350")
     root.configure(bg="#add8e6")
     root.resizable(False, False)
 
@@ -144,6 +158,25 @@ def init_gui():
                                     relief=tk.RAISED,
                                     command=get_weather)
     
+    # Create a button to export weather data
+    export_story_button = tk.Button(root,
+                                text="Export as Story",
+                                font=("helvetica", 12, "bold"),
+                                bg="#008CBA",
+                                fg="#000000",
+                                padx=10,
+                                pady=5,
+                                command=lambda: export_current_weather("story"))
+
+    export_post_button = tk.Button(root,
+                               text="Export as Post",
+                               font=("helvetica", 12, "bold"),
+                               bg="#008CBA",
+                               fg="#000000",
+                               padx=10,
+                               pady=5,
+                               command=lambda: export_current_weather("post"))
+    
     # Create a text widget to display the result
     result_box = tk.Text(root,
                             font=("helvetica", 14),
@@ -166,15 +199,25 @@ def init_gui():
     state_label.pack(pady=10)
     state_entry.pack(pady=5, ipady=5)
     get_weather_button.pack(pady=10, ipadx=10, ipady=5)
+
+    # Center the window on the screen
+    window_width = 500
+    window_height = 350
+
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    x = int((screen_width / 2) - (window_width / 2))
+    y = int((screen_height / 2) - (window_height / 2))
+
+    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
     return root
 
 # Function to save the result as an image
 def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
-
     img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=BACKGROUND_COLOR)
     draw = ImageDraw.Draw(img)
-    print(f"Creating image for {city}...")
 
     # Load fonts
     def load_font(size_tuple):
@@ -215,6 +258,70 @@ def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
     full_path = os.path.join(script_dir, filename)
     img.save(full_path)
     print(f"Weather image saved as: {full_path}")
+
+# Function to handle the export button
+def export_weather_image(format_type, city, temp_c, temp_f, pressure, humidity, description):
+    fmt = EXPORT_FORMATS[format_type]
+    width = fmt["width"]
+    height = fmt["height"]
+    suffix = fmt["filename_suffix"]
+
+    img = Image.new('RGB', (width, height), color=BACKGROUND_COLOR)
+    draw = ImageDraw.Draw(img)
+
+    # Load fonts
+    def load_font(size_tuple):
+        try:
+            return ImageFont.truetype("Helvetica", size_tuple[1])
+        except IOError:
+            return ImageFont.load_default()
+
+    font_title = load_font(FONTS["title"])
+    font_bold = load_font(FONTS["bold"])
+    font_regular = load_font(FONTS["regular"])
+
+    # Title
+    title = f"Weather for {city.title()}"
+    title_width = draw.textlength(title, font=font_title)
+    draw.text(((width - title_width) / 2, 60), title, fill=TEXT_COLOR, font=font_title)
+
+    # Weather Details
+    y_start = 200
+    spacing = 80  # More spacing for tall formats
+
+    def draw_label_value(label, value, y):
+        label_width = draw.textlength(label, font=font_bold)
+        value_width = draw.textlength(value, font=font_regular)
+        total_width = label_width + value_width
+        x_start = (width - total_width) / 2
+
+        draw.text((x_start, y), label, fill=TEXT_COLOR, font=font_bold)
+        draw.text((x_start + label_width, y), value, fill=TEXT_COLOR, font=font_regular)
+
+    draw_label_value("Temperature: ", f"{temp_c}°C / {temp_f}°F", y_start)
+    draw_label_value("Pressure: ", f"{pressure} hPa", y_start + spacing)
+    draw_label_value("Humidity: ", f"{humidity}%", y_start + spacing * 2)
+    draw_label_value("Description: ", description, y_start + spacing * 3)
+
+    filename = f"{city}{suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(script_dir, filename)
+    img.save(full_path)
+    print(f"{format_type.capitalize()} image saved as: {full_path}")
+    messagebox.showinfo("Export Success", f"{format_type.capitalize()} image saved successfully.")
+
+# Helper function to handle the export button clicks
+def export_current_weather(format_type):
+    if not current_weather:
+        messagebox.showerror("Export Error", "No weather data available. Fetch weather first.")
+        return
+    export_weather_image(format_type,
+                    current_weather["city"],
+                    current_weather["temp_c"],
+                    current_weather["temp_f"],
+                    current_weather["pressure"],
+                    current_weather["humidity"],
+                    current_weather["description"])
 
 # Main() Function Entry Point
 def main():

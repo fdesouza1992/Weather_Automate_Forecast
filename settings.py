@@ -8,6 +8,21 @@ IMAGE_HEIGHT = 500
 BACKGROUND_COLOR = "#add8e6"
 
 # Button Colors
+BUTTON_COLOR = "#c9a0dc"
+
+# Export formats
+EXPORT_FORMATS = {
+    "story": {
+        "width": 1080,
+        "height": 1920,
+        "filename_suffix": "_story"
+    },
+    "post": {
+        "width": 1080,
+        "height": 1080,
+        "filename_suffix": "_post"
+    }
+}
 
 # Font Settings
 FONTS = {
