@@ -58,8 +58,7 @@ def display_weather(weather_info, city_name, state_code):
         result_box.delete("1.0", tk.END)
 
         # Create export buttons
-        export_story_button.pack(pady=5, ipadx=8, ipady=2)
-        export_post_button.pack(pady=5, ipadx=8, ipady=2)
+        export_button_frame.pack(pady=5)
 
         #Format city name to uppercase first letter of each word
         formatted_city_name = city_name.title()
@@ -104,13 +103,6 @@ def get_weather():
                 "humidity": weather_info['humidity'],
                 "description": weather_info['description']
             }
-            # # Save the weather data as an image
-            # save_weather_image(city_name, 
-            #                     weather_info['temp_celsius'], 
-            #                     weather_info['temp_fahrenheit'],
-            #                     weather_info['pressure'], 
-            #                     weather_info['humidity'], 
-            #                     weather_info['description'])
         else:
             messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
     except requests.exceptions.RequestException as e:
@@ -119,7 +111,7 @@ def get_weather():
 # Function for GUI initialization
 def init_gui():
     # Initialize global variables
-    global root, state_entry, city_entry, result_box, export_story_button, export_post_button
+    global root, state_entry, city_entry, result_box, export_story_button, export_post_button, export_button_frame
 
     # Create a GUI window
     root = tk.Tk()
@@ -158,25 +150,37 @@ def init_gui():
                                     relief=tk.RAISED,
                                     command=get_weather)
     
+    # Frame to hold export buttons side-by-side
+    export_button_frame = tk.Frame(root, bg="#add8e6")
+
     # Create a button to export weather data
-    export_story_button = tk.Button(root,
+    export_story_button = tk.Button(export_button_frame,
                                 text="Export as Story",
                                 font=("helvetica", 12, "bold"),
-                                bg="#008CBA",
-                                fg="#000000",
+                                bg="white",
+                                fg="black",
+                                activebackground="#cce7ff",
+                                activeforeground="black",
+                                relief=tk.RAISED,
                                 padx=10,
                                 pady=5,
                                 command=lambda: export_current_weather("story"))
 
-    export_post_button = tk.Button(root,
+    export_post_button = tk.Button(export_button_frame,
                                text="Export as Post",
                                font=("helvetica", 12, "bold"),
-                               bg="#008CBA",
-                               fg="#000000",
+                               bg="white",
+                               fg="black",
+                               activebackground="#cce7ff",
+                               activeforeground="black",
+                               relief=tk.RAISED,
                                padx=10,
                                pady=5,
                                command=lambda: export_current_weather("post"))
-    
+    # Side-by-side layout inside the frame
+    export_story_button.pack(side=tk.LEFT, padx=10)
+    export_post_button.pack(side=tk.RIGHT, padx=10)
+
     # Create a text widget to display the result
     result_box = tk.Text(root,
                             font=("helvetica", 14),
