@@ -30,17 +30,30 @@ button_frame = None
 
 # Loads environment variables and verifies required template images exist
 def configure():
-    # Load environment variables
     load_dotenv()
-
+    
+    # Verify API key exists
+    if not os.getenv("API_KEY"):
+        messagebox.showerror("Configuration Error", "OpenWeatherMap API key not found in .env file")
+        return False
+    
     # Verify template images exist
-    for template in TEMPLATE_PATHS.values():
-        if not os.path.exists(template):
+    for template_name, path in TEMPLATE_PATHS.items():
+        if not os.path.exists(path):
             messagebox.showwarning("Template Missing", 
-                                  f"Template image not found: {template}")
+                                 f"{template_name} template image not found: {path}")
+    
+    # Verify network connectivity
+    try:
+        requests.get("http://www.google.com", timeout=5)
+    except requests.ConnectionError:
+        messagebox.showwarning("Network Warning", 
+                             "No internet connection detected. Weather data cannot be fetched.")
+    
+    return True
 
+# Fetch weather data from OpenWeatherMap API with robust error handling
 def fetch_weather_data(city_name, state_code, country_code="US"):
-    """Fetch weather data from OpenWeatherMap API"""
     api_key = os.getenv("API_KEY")
     if not api_key:
         messagebox.showerror("API Error", "OpenWeatherMap API key not configured")
@@ -51,15 +64,32 @@ def fetch_weather_data(city_name, state_code, country_code="US"):
     complete_url = f"{base_url}appid={api_key}&q={query}&units=metric"
     
     try:
-        response = requests.get(complete_url, timeout=10)
+        response = requests.get(complete_url, timeout=15)
+        
+        # Check for HTTP errors
         response.raise_for_status()
-        return response.json()
+        
+        # Verify response contains valid JSON
+        try:
+            data = response.json()
+            if not data:
+                raise ValueError("Empty response from API")
+            return data
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON response from API")
+            
     except requests.exceptions.RequestException as e:
-        messagebox.showerror("API Error", f"Failed to fetch weather data: {str(e)}")
-        return None
+        error_msg = f"Network error: {str(e)}"
+    except ValueError as e:
+        error_msg = f"Data error: {str(e)}"
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+    
+    messagebox.showerror("API Error", f"Failed to fetch weather data: {error_msg}")
+    return None
 
+# Process the raw API data into a more usable format
 def process_weather_data(data):
-    """Process raw API data into usable format"""
     if data.get("cod") != 200:
         return None
         
@@ -75,8 +105,8 @@ def process_weather_data(data):
         "icon": weather["icon"]
     }
 
+# Display weather information in the GUI
 def display_weather(weather_info, city_name, state_code):
-    """Display weather information in the GUI"""
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
         return
@@ -93,8 +123,8 @@ def display_weather(weather_info, city_name, state_code):
     result_box.insert(tk.END, "Conditions: ", "bold")
     result_box.insert(tk.END, f"{weather_info['description']}\n")
 
+# Fetch and display weather for all locations
 def get_weather():
-    """Fetch and display weather for all locations"""
     global current_weather_data
     
     if not location_entries:
@@ -112,6 +142,9 @@ def get_weather():
         result_box.delete("1.0", tk.END)
         current_weather_data = []
         
+    # Track if any requests failed
+    any_failures = False
+    
     for city_entry, state_entry, _ in location_entries:
         city = city_entry.get().strip()
         state = state_entry.get().strip()
@@ -130,13 +163,23 @@ def get_weather():
                     "state": state,
                     **weather
                 })
+            else:
+                any_failures = True
+                result_box.insert(tk.END, f"\nFailed to get weather for {city}, {state}\n", "bold")
+        else:
+            any_failures = True
+            result_box.insert(tk.END, f"\nAPI request failed for {city}, {state}\n", "bold")
     
     if current_weather_data:
         export_button_frame.pack(pady=10)
         root.geometry("800x900")
+    elif not any_failures:
+        messagebox.showinfo("Info", "No weather data to display")
+        toggle_results_visibility(show=False)
+        toggle_input_visibility(show=True)
 
-def add_location_input(parent_frame=None):
-    # Add a new location input row
+# Add a new location input row
+def add_location_input(parent_frame=None):  
     if len(location_entries) >= 5:
         messagebox.showinfo("Limit Reached", "Maximum of 5 locations allowed")
         return
@@ -179,8 +222,8 @@ def add_location_input(parent_frame=None):
     input_elements.append((city_entry, state_entry)) 
     location_entries.append((city_entry, state_entry, None))
 
+# Create weather image using template
 def create_weather_image(template_type="post"):
-    # Create weather image using template
     if not current_weather_data:
         messagebox.showerror("Error", "No weather data to export")
         return
@@ -259,8 +302,8 @@ def create_weather_image(template_type="post"):
     except Exception as e:
         messagebox.showerror("Export Error", f"Failed to create image: {str(e)}")
 
+# Initialize the GUI with enhanced styling
 def init_gui():
-    """Initialize the GUI with enhanced styling"""
     global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame
     
     root = tk.Tk()
@@ -363,8 +406,8 @@ def init_gui():
 
     return root
 
+# Show or hide the results and preview sections
 def toggle_results_visibility(show=True):
-    """Show or hide the results and preview sections"""
     global result_frame, preview_frame, preview_canvas, preview_label, result_box
     
     if show and not hasattr(toggle_results_visibility, "results_created"):
@@ -424,8 +467,8 @@ def toggle_results_visibility(show=True):
     elif not show and hasattr(toggle_results_visibility, "results_created"):
         result_frame.pack_forget()
 
+# Add hover effect to buttons
 def add_hover_effect(button, hover_color="#c8a2c8", default_color="white"):
-    """Add hover effect to buttons"""
     def on_enter(e):
         button.config(background=hover_color)
     def on_leave(e):
@@ -433,8 +476,8 @@ def add_hover_effect(button, hover_color="#c8a2c8", default_color="white"):
     button.bind("<Enter>", on_enter)
     button.bind("<Leave>", on_leave)
 
+# Show or hide the input elements (description, location inputs, buttons)
 def toggle_input_visibility(show=True):
-    """Show or hide the input elements (description, location inputs, buttons)"""
     if show:
         header_frame.pack(fill=tk.X, pady=(0, 20))
         description_label.pack(side=tk.TOP)
@@ -446,8 +489,8 @@ def toggle_input_visibility(show=True):
         location_frame.pack_forget()
         button_frame.pack_forget()
 
+# Reset the input view to its initial state
 def reset_input_view():
-    """Reset the input view to its initial state"""
     global current_weather_data
     
     # Clear all input fields
@@ -467,7 +510,11 @@ def reset_input_view():
     # Re-add the initial location input
     add_location_input()
 
+# Main function to run the application
 def main():
+    if not configure():
+        return  # Exit if configuration fails
+
     configure()
     root = init_gui()
     root.mainloop()
