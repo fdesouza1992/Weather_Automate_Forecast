@@ -3,12 +3,17 @@
 import requests
 import json
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from dotenv import load_dotenv
 import os
-from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime
-from settings import IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, LINE_SPACING, TEXT_COLOR, BUTTON_COLOR, EXPORT_FORMATS
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+from datetime import datetime, date
+from settings import (
+    IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, 
+    LINE_SPACING, TEXT_COLOR, BUTTON_COLOR, EXPORT_FORMATS,
+    TEMPLATES, TEMPLATE_PATHS, DEFAULT_FONT, TEXT_COLOR_DARK,
+    BUTTON_STYLE
+)
 
 # Holds the most recent weather data for exporting
 current_weather = {}
@@ -26,19 +31,37 @@ def add_hover_effect(button, hover_bg="#cce7ff", default_bg="white", hover_fg="b
     button.bind("<Enter>", on_enter)
     button.bind("<Leave>", on_leave)
 
-# Load API key from .env file
+# Loads environment variables and verifies required template images exist
 def configure():
+    # Load environment variables
     load_dotenv()
 
-# Fetch weather data from OpenWeatherMap API
-def fetch_weather_data(city_name, state_code):
-    api_key = os.getenv("API_KEY")
-    base_url = "http://api.openweathermap.org/data/2.5/weather?"
-    query = f"{city_name}, {state_code}, US"
-    complete_url = f"{base_url}appid={api_key}&q={query}"
+    # Verify template images exist
+    for template in TEMPLATE_PATHS.values():
+        if not os.path.exists(template):
+            messagebox.showwarning("Template Missing", 
+                                  f"Template image not found: {template}")
 
-    response = requests.get(complete_url)
-    return response.json()
+# Fetch weather data from OpenWeatherMap API
+def fetch_weather_data(city_name, state_code, country_code="US"):
+   # Construct API request URL
+    api_key = os.getenv("API_KEY")
+    if not api_key:
+        messagebox.showerror("API Error", "OpenWeatherMap API key not configured")
+        return None
+    
+    base_url = "http://api.openweathermap.org/data/2.5/weather?"
+    query = f"{city_name},{state_code},{country_code}"
+    complete_url = f"{base_url}appid={api_key}&q={query}&units=metric"
+    
+    # Make the API request
+    try:
+        response = requests.get(complete_url, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        messagebox.showerror("API Error", f"Failed to fetch weather data: {str(e)}")
+        return None
 
 #Function to process weather data and format it for display
 def process_weather_data(data):
