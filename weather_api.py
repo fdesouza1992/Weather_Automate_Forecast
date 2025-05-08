@@ -308,7 +308,7 @@ def init_gui():
     
     root = tk.Tk()
     root.title("Weather Forecast Automator")
-    root.configure(bg="#f0f8ff")  # Lighter background
+    root.configure(bg="#f0f8ff")  
     
     # Set window size and center it
     window_width = 800
@@ -400,9 +400,6 @@ def init_gui():
     
     # Ensure export buttons are hidden initially
     export_button_frame.pack_forget()
-    
-    # Add initial location input
-    add_location_input()
 
     return root
 
