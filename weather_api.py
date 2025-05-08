@@ -15,19 +15,27 @@ from settings import (
     BUTTON_STYLE
 )
 
-# Holds the most recent weather data for exporting
-current_weather = {}
-
-# Will hold up to 5 pairs of city and state code (city_entry, state_entry)
-location_entries = []
+# Global Variables
+current_weather_data = {}                       # Holds the most recent weather data for exporting
+location_entries = []                           # List to hold city and state entry pairs   
+input_elements = []                             # List to hold all input elements
+root = None                                     # Main window
+main_frame = None                               # Main frame for the GUI
+result_frame = None                             # Frame to hold the result text box
+preview_frame = None                            # Frame to hold the preview image
+preview_canvas = None                           # Canvas for the preview image
+preview_label = None                            # Label for the preview image
+header_frame = None                             # Frame for the header
+description_label = None                        # Label for the description
+button_frame = None                             # Frame for the buttons
 
 # Function to add hover effect to buttons
-def add_hover_effect(button, hover_bg="#cce7ff", default_bg="white", hover_fg="black", default_fg="black"):
+def add_hover_effect(button, hover_color="#c8a2c8", default_color="white"):
+    # Add hover effect to buttons
     def on_enter(e):
-        button.configure(background=hover_bg, foreground=hover_fg)
+        button.config(background=hover_color)
     def on_leave(e):
-        button.configure(background=default_bg, foreground=default_fg)
-
+        button.config(background=default_color)
     button.bind("<Enter>", on_enter)
     button.bind("<Leave>", on_leave)
 
@@ -113,18 +121,23 @@ def display_weather(weather_info, city_name, state_code):
     else:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
 
-# Function trigged by "Get Weather" button
+# Function trigged by "Get Weather" button, which fetches and displays weather data for all locations
 def get_weather():
-    global current_weather
+    global current_weather_data
 
     if not location_entries:
         messagebox.showerror("Input Error", "Please add at least one location.")
         return
 
-    result_box.pack(pady=10)
-    result_box.delete("1.0", tk.END)  # Clear previous output
+    toggle_input_visibility(show=False)         # Hide the input elements
+    toggle_results_visibility(show=True)        # Show the results area
 
-    for city_entry, state_entry in location_entries:
+    # Clear previous results
+    if hasattr(toggle_results_visibility, "results_created"):    
+        result_box.delete("1.0", tk.END)
+        current_weather_data = []
+
+    for city_entry, state_entry, _ in location_entries:
         city_name = city_entry.get().strip()
         state_code = state_entry.get().strip().upper()
 
@@ -134,10 +147,18 @@ def get_weather():
 
         try:
             data = fetch_weather_data(city_name, state_code)
-            weather_info = process_weather_data(data)
-            if weather_info:
-                # Accumulate and show multiple weather reports
-                display_weather(weather_info, city_name, state_code)
+            if data:
+                # Process the weather data
+                weather_info = process_weather_data(data)
+                
+                if weather_info:
+                    # Accumulate and show multiple weather reports
+                    display_weather(weather_info, city_name, state_code)
+                    current_weather_data.append({
+                    "city": city_name,
+                    "state": state_code,
+                    **weather_info
+                })
 
                 # Save the first valid one for exporting
                 if not current_weather:
@@ -149,273 +170,333 @@ def get_weather():
                         "humidity": weather_info['humidity'],
                         "description": weather_info['description']
                     }
-            else:
-                result_box.insert(tk.END, f"\nWeather not found for {city_name}, {state_code}\n", "bold")
+            
         except requests.exceptions.RequestException as e:
             result_box.insert(tk.END, f"\nFailed to retrieve data for {city_name}, {state_code}:\n{e}\n", "bold")
-
-# Function for GUI initialization
-def init_gui():
-    # Initialize global variables
-    global root, state_entry, city_entry, result_box, export_story_button, export_post_button, export_button_frame
-
-    # Create a GUI window
-    root = tk.Tk()
-    root.title("Weather App")
-    root.configure(bg="#add8e6")
-    root.resizable(False, False)
-
-    # Frame to hold all dynamic location input rows
-    location_frame = tk.Frame(root, bg="#add8e6")
-    location_frame.pack(pady=10)
-
-    add_location_input(location_frame)          # Add the first location input row
-
-    # Add the + Location button
-    add_location_button = tk.Button(root,
-                                    text="+ Location",
-                                    font=("helvetica", 14, "bold"),
-                                    bg="white",
-                                    fg="black",
-                                    activebackground="white",
-                                    activeforeground="black",
-                                    relief=tk.GROOVE,
-                                    highlightthickness=0,
-                                    bd=2,
-                                    padx=10,
-                                    pady=5,
-                                    command=lambda: add_location_input(root))
-
-    # Add hover effect to the button
-    add_hover_effect(add_location_button, hover_bg="#c8a2c8", hover_fg="#4b0082") 
-
-    # Create a button to fetch weather data
-    get_weather_button = tk.Button(root,
-                                    text="Get Weather",
-                                    font=("helvetica", 14, "bold"),
-                                    bg="white",
-                                    fg="black",
-                                    activebackground="white",
-                                    activeforeground="black",
-                                    relief=tk.GROOVE,
-                                    highlightthickness=0,
-                                    bd=2,
-                                    padx=10,
-                                    pady=5,
-                                    command=get_weather)
     
-    # Add hover effect to the button
-    add_hover_effect(get_weather_button, hover_bg="#c8a2c8", hover_fg="#4b0082")
-    
-    # Frame to hold export buttons side-by-side
-    export_button_frame = tk.Frame(root, bg="#add8e6")
-
-    # Create a button to export weather data
-    export_story_button = tk.Button(export_button_frame,
-                                text="Export as Story",
-                                font=("helvetica", 12, "bold"),
-                                bg="white",
-                                fg="black",
-                                activebackground="white",
-                                activeforeground="black",
-                                relief=tk.GROOVE,
-                                highlightthickness=0,
-                                bd=2,
-                                padx=10,
-                                pady=5,
-                                command=lambda: export_current_weather("story"))
-    
-    # Add hover effect to the button
-    add_hover_effect(export_story_button, hover_bg="#c8a2c8", hover_fg="#4b0082")
-
-    # Create a button to export weather data
-    export_post_button = tk.Button(export_button_frame,
-                               text="Export as Post",
-                               font=("helvetica", 12, "bold"),
-                               bg="white",
-                               fg="black",
-                               activebackground="white",
-                               activeforeground="black",
-                               relief=tk.RAISED,
-                               highlightthickness=0,
-                               bd=2,
-                               padx=10,
-                               pady=5,
-                               command=lambda: export_current_weather("post"))
-    
-    # Add hover effect to the button
-    add_hover_effect(export_post_button, hover_bg="#c8a2c8", hover_fg="#4b0082")
-
-    # Side-by-side layout inside the frame
-    export_story_button.pack(side=tk.LEFT, padx=10)
-    export_post_button.pack(side=tk.RIGHT, padx=10)
-
-    # Create a text widget to display the result
-    result_box = tk.Text(root,
-                            font=("helvetica", 14),
-                            bg="#add8e6",
-                            height=10,
-                            width=50,
-                            wrap=tk.WORD,
-                            relief=tk.FLAT,
-                            bd=0)
-    result_box.tag_configure("bold",
-                            font=("helvetica", 14, "bold"),
-                            justify=tk.CENTER)
-    result_box.tag_configure("heading",
-                            font=("helvetica", 20, "bold"),
-                            justify=tk.CENTER)
-  
-    add_location_button.pack(side=tk.LEFT, padx=10)
-    get_weather_button.pack(side=tk.RIGHT, padx=10)
-
-    # Center the window on the screen
-    window_width = 700
-    window_height = 500
-
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-
-    x = int((screen_width / 2) - (window_width / 2))
-    y = int((screen_height / 2) - (window_height / 2))
-
-    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    
-    return root
+    if current_weather_data:
+        export_button_frame.pack(pady=10)
+        root.geometry("800x900")
 
 # Function to add a new location input row
-def add_location_input(frame):
-    if len (location_entries) >= 5:
-        messagebox.showerror("Input Limit", "You can only add up to 5 locations.")
+def add_location_input(parent_frame=None):
+    # Add a new location input row
+    if len(location_entries) >= 5:
+        messagebox.showinfo("Limit Reached", "Maximum of 5 locations allowed")
         return
         
-    # Create a container frame for each row
-    row_frame = tk.Frame(frame, bg="#add8e6")
+    frame = parent_frame if parent_frame else location_frame
+    row_frame = tk.Frame(frame, bg="#f0f8ff")
     row_frame.pack(pady=5)
+    
+    # City input
+    tk.Label(
+        row_frame, 
+        text="City:", 
+        bg="#f0f8ff",
+        fg = TEXT_COLOR_DARK, 
+        font=("Helvetica", 14)).grid(row=0, column=0, sticky="w")
 
-    # Create City Label + Entry
-    city_label = tk.Label(row_frame, text="City:", font=("helvetica", 12, "bold"), bg="#add8e6")
-    city_label.grid(row=0, column=0, sticky="w")
-    city_entry = tk.Entry(row_frame, width=20, font=("helvetica", 14))
+    city_entry = tk.Entry(
+        row_frame, 
+        font=("Helvetica", 14), 
+        width=20)
+    
     city_entry.grid(row=1, column=0, padx=5)
-
-    # Create State Label + Entry
-    state_label = tk.Label(row_frame, text="State:", font=("helvetica", 12, "bold"), bg="#add8e6")
-    state_label.grid(row=0, column=1, sticky="w")
-    state_entry = tk.Entry(row_frame, width=5, font=("helvetica", 14))
+    
+    # State input
+    tk.Label(
+        row_frame, 
+        text="State:", 
+        bg="#f0f8ff", 
+        fg = TEXT_COLOR_DARK,
+        font=("Helvetica", 14)).grid(row=0, column=1, sticky="w")
+    
+    state_entry = tk.Entry(
+        row_frame, 
+        font=("Helvetica", 14), 
+        width=5)
+    
     state_entry.grid(row=1, column=1, padx=5)
+    
+   # Store references for clearing later
+    input_elements.append((city_entry, state_entry)) 
+    location_entries.append((city_entry, state_entry, None))
 
-    # Show the pair in the list
-    location_entries.append((city_entry, state_entry))    
-
-# Function to save the result as an image
-def save_weather_image(city, temp_c, temp_f, pressure, humidity, description):
-    img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=BACKGROUND_COLOR)
-    draw = ImageDraw.Draw(img)
-
-    # Load fonts
-    def load_font(size_tuple):
-        try:
-            return ImageFont.truetype("Helvetica", size_tuple[1])
-        except IOError:
-            return ImageFont.load_default()
-
-    font_title = load_font(FONTS["title"])
-    font_bold = load_font(FONTS["bold"])
-    font_regular = load_font(FONTS["regular"])
-
-    # Title
-    title = f"Weather for {city.title()}"
-    title_width = draw.textlength(title, font=font_title)
-    draw.text(((IMAGE_WIDTH - title_width) / 2, 30), title, fill=TEXT_COLOR, font=font_title)
-
-    # Data lines
-    y_start = 100
-
-    def draw_label_value(label, value, y):
-        label_width = draw.textlength(label, font=font_bold)
-        value_width = draw.textlength(value, font=font_regular)
-        total_width = label_width + value_width
-        x_start = (IMAGE_WIDTH - total_width) / 2
-
-        draw.text((x_start, y), label, fill=TEXT_COLOR, font=font_bold)
-        draw.text((x_start + label_width, y), value, fill=TEXT_COLOR, font=font_regular)
-
-    draw_label_value("Temperature: ", f"{temp_c}°C / {temp_f}°F", y_start)
-    draw_label_value("Pressure: ", f"{pressure} hPa", y_start + LINE_SPACING)
-    draw_label_value("Humidity: ", f"{humidity}%", y_start + LINE_SPACING * 2)
-    draw_label_value("Description: ", description, y_start + LINE_SPACING * 3)
-
-    # Save image
-    filename = f"{city}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    full_path = os.path.join(script_dir, filename)
-    img.save(full_path)
-    print(f"Weather image saved as: {full_path}")
-
-# Function to handle the export button
-def export_weather_image(format_type, city, temp_c, temp_f, pressure, humidity, description):
-    fmt = EXPORT_FORMATS[format_type]
-    width = fmt["width"]
-    height = fmt["height"]
-    suffix = fmt["filename_suffix"]
-
-    img = Image.new('RGB', (width, height), color=BACKGROUND_COLOR)
-    draw = ImageDraw.Draw(img)
-
-    # Load fonts
-    def load_font(size_tuple):
-        try:
-            return ImageFont.truetype("Helvetica", size_tuple[1])
-        except IOError:
-            return ImageFont.load_default()
-
-    font_title = load_font(FONTS["title"])
-    font_bold = load_font(FONTS["bold"])
-    font_regular = load_font(FONTS["regular"])
-
-    # Title
-    title = f"Weather for {city.title()}"
-    title_width = draw.textlength(title, font=font_title)
-    draw.text(((width - title_width) / 2, 60), title, fill=TEXT_COLOR, font=font_title)
-
-    # Weather Details
-    y_start = 200
-    spacing = 80  # More spacing for tall formats
-
-    def draw_label_value(label, value, y):
-        label_width = draw.textlength(label, font=font_bold)
-        value_width = draw.textlength(value, font=font_regular)
-        total_width = label_width + value_width
-        x_start = (width - total_width) / 2
-
-        draw.text((x_start, y), label, fill=TEXT_COLOR, font=font_bold)
-        draw.text((x_start + label_width, y), value, fill=TEXT_COLOR, font=font_regular)
-
-    draw_label_value("Temperature: ", f"{temp_c}°C / {temp_f}°F", y_start)
-    draw_label_value("Pressure: ", f"{pressure} hPa", y_start + spacing)
-    draw_label_value("Humidity: ", f"{humidity}%", y_start + spacing * 2)
-    draw_label_value("Description: ", description, y_start + spacing * 3)
-
-    filename = f"{city}{suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    full_path = os.path.join(script_dir, filename)
-    img.save(full_path)
-    print(f"{format_type.capitalize()} image saved as: {full_path}")
-    messagebox.showinfo("Export Success", f"{format_type.capitalize()} image saved successfully.")
-
-# Helper function to handle the export button clicks
-def export_current_weather(format_type):
-    if not current_weather:
-        messagebox.showerror("Export Error", "No weather data available. Fetch weather first.")
+# Function to create and export current weather data in the selected template
+def create_weather_image(template_type="post"):
+    # Create weather image using template
+    if not current_weather_data:
+        messagebox.showerror("Error", "No weather data to export")
         return
-    export_weather_image(format_type,
-                    current_weather["city"],
-                    current_weather["temp_c"],
-                    current_weather["temp_f"],
-                    current_weather["pressure"],
-                    current_weather["humidity"],
-                    current_weather["description"])
+        
+    try:
+        template_path = TEMPLATE_PATHS.get(template_type, TEMPLATE_PATHS["post"])
+        image = Image.open(template_path)
+        draw = ImageDraw.Draw(image)
+        
+        # Try to load custom font, fallback to default
+        try:
+            font_large = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["large"])
+            font_medium = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["medium"])
+        except:
+            font_large = ImageFont.load_default()
+            font_medium = ImageFont.load_default()
+        
+        # Add date
+        today = date.today().strftime("%A - %B %d, %Y")
+        draw.text(
+            TEMPLATES[template_type]["date_position"], 
+            today, 
+            fill=TEXT_COLOR, 
+            font=font_medium
+        )
+        
+        # Add weather for each location
+        for i, weather in enumerate(current_weather_data):
+            if i >= len(TEMPLATES[template_type]["city_position"]):
+                break
+                
+            # City name
+            city_text = f"{weather['city'].title()}, {weather['state'].upper()}"
+            city_pos = TEMPLATES[template_type]["city_position"][i]
+            draw.text(
+                city_pos,  # Slightly above temp position
+                city_text,
+                fill=TEXT_COLOR_DARK,
+                font=font_large
+            )
+            
+            # Temperature
+            temp_text = f"{weather['temp_celsius']}°C"
+            temp_pos = TEMPLATES[template_type]["temp_position"][i]
+            draw.text(
+                temp_pos,
+                temp_text,
+                fill=TEXT_COLOR,
+                font=font_medium
+            )
+            
+            # Humidity (optional)
+            if "humidity_position" in TEMPLATES[template_type]:
+                hum_text = f"{weather['humidity']}%"
+                hum_pos = TEMPLATES[template_type]["humidity_position"][i]
+                draw.text(
+                    hum_pos,
+                    hum_text,
+                    fill=TEXT_COLOR,
+                    font=font_medium
+                )
+        
+        # Save the image
+        save_dir = filedialog.askdirectory(title="Select Save Location")
+        if save_dir:
+            filename = f"weather_{template_type}_{date.today().strftime('%Y%m%d')}.png"
+            save_path = os.path.join(save_dir, filename)
+            image.save(save_path)
+            
+            # Optionally save as PDF
+            pdf_path = os.path.join(save_dir, filename.replace(".png", ".pdf"))
+            image.convert("RGB").save(pdf_path)
+            
+            messagebox.showinfo("Success", f"Exported to:\n{save_path}\n{pdf_path}")
+            
+    except Exception as e:
+        messagebox.showerror("Export Error", f"Failed to create image: {str(e)}")
+
+# Function to toggle visibility of input elements
+def toggle_input_visibility(show=True):
+    # Show or hide the input elements (description, location inputs, buttons)
+    if show:
+        header_frame.pack(fill=tk.X, pady=(0, 20))
+        description_label.pack(side=tk.TOP)
+        location_frame.pack(fill=tk.X)
+        button_frame.pack(pady=10)
+    else:
+        header_frame.pack_forget()
+        description_label.pack_forget()
+        location_frame.pack_forget()
+        button_frame.pack_forget()
+
+# Function to toggle visibility of results
+def toggle_results_visibility(show=True):
+    # Show or hide the results and preview sections
+    global result_frame, preview_frame, preview_canvas, preview_label, result_box
+    
+    if show and not hasattr(toggle_results_visibility, "results_created"):
+        # Create frame if it doesn't exist
+        result_frame = tk.Frame(main_frame, bg="#f0f8ff")
+        result_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        # Text results
+        result_box = tk.Text(
+            result_frame,
+            wrap=tk.WORD,
+            font=("Helvetica", 14),
+            height=10,
+            width=60,
+            relief=tk.SUNKEN,
+            bd=2
+        )
+
+        result_label = tk.Label(
+            result_frame,
+            text="Results Preview Window: ", 
+            font=("Helvetica", 18, "bold"),
+            bg="#f0f8ff",
+            justify="left"
+        )
+
+        result_label.pack(fill=tk.X)
+        result_label.config(fg=TEXT_COLOR_DARK)
+
+        result_box.pack(fill=tk.BOTH, expand=True)
+        result_box.tag_configure("heading", font=("Helvetica", 18, "bold"))
+        result_box.tag_configure("bold", font=("Helvetica", 14, "bold"))
+        result_box.insert(tk.END, "Weather Results:\n", "heading")
+        result_box.insert(tk.END, "                                    \n")
+        
+        # Scrollbar
+        scrollbar = tk.Scrollbar(result_frame, command=result_box.yview)
+        result_box.config(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Back button at the bottom
+        back_button = tk.Button(
+            result_frame,
+            text="← Back to Input",
+            command=lambda: [
+                toggle_results_visibility(show=False),
+                toggle_input_visibility(show=True),
+                reset_input_view()  
+            ],
+            **BUTTON_STYLE
+        )
+        back_button.pack(pady=10)
+        add_hover_effect(back_button)
+
+        toggle_results_visibility.results_created = True
+    elif not show and hasattr(toggle_results_visibility, "results_created"):
+        result_frame.pack_forget()
+
+# Function to reset input view to its initial state
+def reset_input_view():
+    global current_weather_data
+    
+    # Clear all input fields
+    for widget in input_elements:
+        if isinstance(widget, tk.Entry):
+            widget.delete(0, tk.END)
+    
+    location_entries.clear()                                # Clear location entries
+    current_weather_data = []                               # Clear current weather data        
+    export_button_frame.pack_forget()                       # Hide export buttons 
+    # add_location_input()                                    # Add a new location input row
+
+# Function to initialize the GUI with enhanced styling
+def init_gui():
+    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame
+    
+    root = tk.Tk()
+    root.title("Weather Forecast Automator")
+    root.configure(bg="#f0f8ff")  # Lighter background
+    
+    # Set window size and center it
+    window_width = 800
+    window_height = 700
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width // 2) - (window_width // 2)
+    y = (screen_height // 2) - (window_height // 2)
+    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    
+    # Main container with padding
+    main_frame = tk.Frame(root, bg="#f0f8ff", padx=20, pady=20)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+    
+    # App Header
+    header_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    header_frame.pack(fill=tk.X, pady=(0, 20))
+    
+    tk.Label(
+        header_frame,
+        text="Weather Forecast Post Generator",
+        font=("Helvetica", 28, "bold"),
+        bg="#f0f8ff",
+        fg="#2c3e50"
+    ).pack(side=tk.TOP, pady=10)
+    
+    description_label = tk.Label(
+        header_frame,
+        text="Get weather forecasts for up to 5 locations and export as social media posts\n"
+             "Enter city and state codes (e.g. 'Boston, MA') then click 'Get Weather' in order to fetch the data.",
+        font=("Helvetica", 14),
+        bg="#f0f8ff",
+        fg="#7f8c8d"
+    )
+    description_label.pack(side=tk.TOP)
+    
+    # Location input frame
+    location_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    location_frame.pack(fill=tk.X)
+    
+    # Add initial location input
+    add_location_input(location_frame)
+    
+    # Buttons frame
+    button_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    button_frame.pack(pady=10)
+    
+    # Add location button
+    add_button = tk.Button(
+        button_frame,
+        text="+ Add Location",
+        command=lambda: add_location_input(),
+        **BUTTON_STYLE
+    )
+    add_button.pack(side=tk.LEFT, padx=5)
+    add_hover_effect(add_button)
+    
+    # Get weather button
+    weather_button = tk.Button(
+        button_frame,
+        text="Get Weather",
+        command=get_weather,
+        **BUTTON_STYLE
+    )
+    weather_button.pack(side=tk.LEFT, padx=5)
+    add_hover_effect(weather_button)
+    
+    # Export buttons frame
+    export_button_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    
+    # Export buttons
+    export_post = tk.Button(
+        export_button_frame,
+        text="Export as Post",
+        command=lambda: create_weather_image("post"),
+        **BUTTON_STYLE
+    )
+    export_post.pack(side=tk.LEFT, padx=5)
+    add_hover_effect(export_post)
+    
+    export_story = tk.Button(
+        export_button_frame,
+        text="Export as Story",
+        command=lambda: create_weather_image("story"),
+        **BUTTON_STYLE
+    )
+    export_story.pack(side=tk.LEFT, padx=5)
+    add_hover_effect(export_story)
+    
+    # Ensure export buttons are hidden initially
+    export_button_frame.pack_forget()
+    
+    # Add initial location input
+    add_location_input()
+
+    return root
 
 # Main() Function Entry Point
 def main():
