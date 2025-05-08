@@ -65,7 +65,7 @@ def process_weather_data(data):
 def display_weather(weather_info, city_name, state_code):
     if weather_info:
         # Resize the window to fit content better
-        root.geometry("750x550") 
+        root.geometry("750x850") 
         
         result_box.pack(pady=10)
 
