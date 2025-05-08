@@ -488,17 +488,20 @@ def toggle_input_visibility(show=True):
 
 # Reset the input view to its initial state
 def reset_input_view():
-    global current_weather_data
+    global current_weather_data, location_entries, input_elements
     
     # Clear all input fields
-    for widget in input_elements:
-        if isinstance(widget, tk.Entry):
-            widget.delete(0, tk.END)
+    for entry_pair in input_elements:
+        for entry in entry_pair:
+            entry.delete(0, tk.END)
     
-    # Clear location entries
+    # Clear all location frames except the first one
+    for widget in location_frame.winfo_children()[1:]:
+        widget.destroy()
+    
+    # Clear all stored references
     location_entries.clear()
-    
-    # Clear weather data
+    input_elements.clear()
     current_weather_data = []
     
     # Hide export buttons
@@ -506,6 +509,9 @@ def reset_input_view():
     
     # Re-add the initial location input
     add_location_input()
+    
+    # Reset window size
+    root.geometry("800x700")
 
 # Main function to run the application
 def main():
@@ -518,4 +524,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    main()
+
