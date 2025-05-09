@@ -525,3 +525,12 @@ def main():
 if __name__ == "__main__":
     main()
 
+# This code is part of a weather application that fetches and displays weather data
+# from OpenWeatherMap API. It includes a GUI for user input, error handling, and
+# functionality to export the weather data as images or PDFs. The application is
+# designed to be user-friendly and visually appealing, with hover effects and
+# customizable templates for social media posts.
+
+# Created by Felipe de Souza
+# Date: 2025-05-08
+# Version: 2.0.0
