@@ -114,6 +114,9 @@ def display_weather(weather_info, city_name, state_code):
     formatted_city = f"{city_name.title()}, {state_code.upper()}"
     
     result_box.insert(tk.END, f"\nWeather for {formatted_city}:\n\n", "heading")
+    result_box.insert(tk.END, "Weather Icon: ", "bold")
+    icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
+
     result_box.insert(tk.END, "Temperature: ", "bold")
     result_box.insert(tk.END, f"{weather_info['temp_celsius']}°C / {weather_info['temp_fahrenheit']}°F\n")
     result_box.insert(tk.END, "Pressure: ", "bold")
