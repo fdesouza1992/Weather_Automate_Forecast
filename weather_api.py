@@ -2,10 +2,10 @@
 import requests
 import json
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox, filedialog, ttk
 from dotenv import load_dotenv
 import os
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
 from datetime import datetime, date
 from settings import (
     IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, 
@@ -13,6 +13,8 @@ from settings import (
     TEMPLATES, TEMPLATE_PATHS, DEFAULT_FONT, TEXT_COLOR_DARK,
     BUTTON_STYLE
 )
+from io import BytesIO
+import urllib.request
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -42,14 +44,7 @@ def configure():
         if not os.path.exists(path):
             messagebox.showwarning("Template Missing", 
                                  f"{template_name} template image not found: {path}")
-    
-    # Verify network connectivity
-    try:
-        requests.get("http://www.google.com", timeout=5)
-    except requests.ConnectionError:
-        messagebox.showwarning("Network Warning", 
-                             "No internet connection detected. Weather data cannot be fetched.")
-    
+     
     return True
 
 # Fetch weather data from OpenWeatherMap API with robust error handling
@@ -114,17 +109,47 @@ def display_weather(weather_info, city_name, state_code):
     formatted_city = f"{city_name.title()}, {state_code.upper()}"
     
     result_box.insert(tk.END, f"\nWeather for {formatted_city}:\n\n", "heading")
-    result_box.insert(tk.END, "Weather Icon: ", "bold")
+    #result_box.insert(tk.END, "Weather Icon: ", "bold")
     icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
 
-    result_box.insert(tk.END, "Temperature: ", "bold")
+    try:
+        # Fetch the image data
+        with urllib.request.urlopen(icon_url) as u:
+            raw_data = u.read()
+        
+        # Convert to a format Tkinter can use
+        im = Image.open(BytesIO(raw_data))
+        
+        new_size = (50, 50)  # Smaller size
+        im = im.resize(new_size)
+        
+        # Convert to PhotoImage
+        photo = ImageTk.PhotoImage(im)
+        
+        # Create a label to display the image
+        icon_label = tk.Label(
+            result_box, 
+            image=photo, 
+            bg='white', 
+            bd=0)
+        icon_label.image = photo  # Keep a reference!
+        
+        # Insert the image into the text widget
+        result_box.window_create(tk.END, window=icon_label)
+        result_box.insert(tk.END, "  ")
+        
+    except Exception as e:
+        result_box.insert(tk.END, f"[Icon not available] - {str(e)}\n")
+
+    result_box.insert(tk.END, "Temp: ", "bold")
     result_box.insert(tk.END, f"{weather_info['temp_celsius']}°C / {weather_info['temp_fahrenheit']}°F\n")
+    result_box.insert(tk.END, "Conditions: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['description']}\n")
     result_box.insert(tk.END, "Pressure: ", "bold")
     result_box.insert(tk.END, f"{weather_info['pressure']} hPa\n")
     result_box.insert(tk.END, "Humidity: ", "bold")
     result_box.insert(tk.END, f"{weather_info['humidity']}%\n")
-    result_box.insert(tk.END, "Conditions: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['description']}\n")
+    
 
 # Fetch and display weather for all locations
 def get_weather():
