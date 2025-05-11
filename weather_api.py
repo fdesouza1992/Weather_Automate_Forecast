@@ -430,6 +430,10 @@ def init_gui():
     root.title("Weather Forecast Automator")
     root.configure(bg="#f0f8ff")  
     
+    # Set icon
+    root_icon = tk.PhotoImage(file="Images/FelipeWeatherAppLogo.png")
+    root.iconphoto(False, root_icon)
+
     # Set window size and center it
     window_width = 800
     window_height = 700
@@ -438,6 +442,7 @@ def init_gui():
     x = (screen_width // 2) - (window_width // 2)
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    root.resizable(False, False)
     
     # Main container with padding
     main_frame = tk.Frame(root, bg="#f0f8ff", padx=20, pady=20)
