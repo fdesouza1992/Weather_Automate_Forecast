@@ -6,7 +6,7 @@ from tkinter import messagebox, filedialog, ttk
 from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from settings import (
     IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, FONTS, 
     LINE_SPACING, TEXT_COLOR, BUTTON_COLOR, EXPORT_FORMATS,
@@ -96,14 +96,48 @@ def process_weather_data(data):
         
     main = data["main"]
     weather = data["weather"][0]
+    wind = data.get("wind", {})
+    sys = data.get("sys", {})
+    tz_offset = data.get("timezone", 0)  # in seconds
     
+    # Convert timestamps to local time
+    sunrise_utc = datetime.fromtimestamp(sys["sunrise"], timezone.utc)
+    sunset_utc = datetime.fromtimestamp(sys["sunset"], timezone.utc)
+    
+    # Apply timezone offset
+    sunrise_local = sunrise_utc + timedelta(seconds=tz_offset)
+    sunset_local = sunset_utc + timedelta(seconds=tz_offset)
+
     return {
+        #Temperature Data
         "temp_celsius": round(main["temp"], 1),
         "temp_fahrenheit": round(main["temp"] * 9/5 + 32, 1),
+        "feels_like_celsius": round(main["feels_like"], 1),
+        "feels_like_fahrenheit": round(main["feels_like"] * 9/5 + 32, 1),
+        "temp_min_celsius": round(main["temp_min"], 1),
+        "temp_min_fahrenheit": round(main["temp_min"] * 9/5 + 32, 1),
+        "temp_max_celsius": round(main["temp_max"], 1),
+        "temp_max_fahrenheit": round(main["temp_max"] * 9/5 + 32, 1),
+
+        #Atmospheric Data
         "pressure": main["pressure"],
         "humidity": main["humidity"],
+        "sea_level": main.get("sea_level", 0),
+
+        #Weather Conditions
+        "condition": weather["main"],
         "description": weather["description"].capitalize(),
-        "icon": weather["icon"]
+        "icon": weather["icon"],
+
+        #Wind Data
+        "wind_speed": round(wind.get("speed", 0), 1),
+
+        #Sunrise/Sunset Data
+        "sunrise": sunrise_local.strftime('%H:%M:%S'),
+        "sunset": sunset_local.strftime('%H:%M:%S'),
+
+        #Location Data
+        "timezone": tz_offset
     }
 
 # Display weather information in the GUI
@@ -147,15 +181,37 @@ def display_weather(weather_info, city_name, state_code):
     except Exception as e:
         result_box.insert(tk.END, f"[Icon not available] - {str(e)}\n")
 
-    result_box.insert(tk.END, "Temp: ", "bold")
     result_box.insert(tk.END, f"{weather_info['temp_celsius']}°C / {weather_info['temp_fahrenheit']}°F\n")
     result_box.insert(tk.END, "Conditions: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['condition']}\n")
+    result_box.insert(tk.END, "Feels Like: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['feels_like_celsius']}°C / {weather_info['feels_like_fahrenheit']}°F\n")
+    result_box.insert(tk.END, "Min/Max (in °C): ", "bold")
+    result_box.insert(tk.END, f"{weather_info['temp_min_celsius']}°C / {weather_info['temp_max_celsius']}°C\n")
+    result_box.insert(tk.END, "Min/Max (in °F): ", "bold")
+    result_box.insert(tk.END, f"{weather_info['temp_min_fahrenheit']}°F / {weather_info['temp_max_fahrenheit']}°F\n")
+    result_box.insert(tk.END, "Description: ", "bold")
     result_box.insert(tk.END, f"{weather_info['description']}\n")
+    result_box.insert(tk.END, "Wind Speed: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['wind_speed']} m/s\n")
+    result_box.insert(tk.END, "Sea Level: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['sea_level']} hPa\n")
     result_box.insert(tk.END, "Pressure: ", "bold")
     result_box.insert(tk.END, f"{weather_info['pressure']} hPa\n")
     result_box.insert(tk.END, "Humidity: ", "bold")
     result_box.insert(tk.END, f"{weather_info['humidity']}%\n")
-    
+    result_box.insert(tk.END, "Sunrise: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['sunrise']}\n")
+    result_box.insert(tk.END, "Sunset: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['sunset']}\n")
+
+    tz_hours = weather_info['timezone'] // 3600
+    tz_sign = '-' if tz_hours < 0 else '+'
+    tz_display = f"UTC/GMT {tz_sign}{abs(tz_hours)} hours"
+
+    result_box.insert(tk.END, "Timezone: ", "bold")
+    result_box.insert(tk.END, f"{tz_display}\n")
+    result_box.insert(tk.END, "\n----------------------------------------\n")
 
 # Fetch and display weather for all locations
 def get_weather():
