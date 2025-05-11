@@ -345,7 +345,18 @@ def create_weather_image(template_type="post"):
         for i, weather in enumerate(current_weather_data):
             if i >= len(TEMPLATES[template_type]["city_position"]):
                 break
-                
+
+            # App Title
+            title_text = "Weather Forecast Generator"
+            title_pos = TEMPLATES[template_type]["title_position"]
+            draw.text(
+                title_pos,
+                title_text,
+                fill=TEXT_COLOR,
+                font=font_large,
+                align="center"
+            )
+
             # City name
             city_text = f"{weather['city'].title()}, {weather['state'].upper()}"
             city_pos = TEMPLATES[template_type]["city_position"][i]
@@ -363,7 +374,7 @@ def create_weather_image(template_type="post"):
                 temp_pos,
                 temp_text,
                 fill=TEXT_COLOR,
-                font=font_medium
+                font=font_large
             )
             
             # Humidity (optional)
@@ -374,13 +385,13 @@ def create_weather_image(template_type="post"):
                     hum_pos,
                     hum_text,
                     fill=TEXT_COLOR,
-                    font=font_medium
+                    font=font_large
                 )
         
         # Save the image
         save_dir = filedialog.askdirectory(title="Select Save Location")
         if save_dir:
-            filename = f"weather_{template_type}_{date.today().strftime('%Y%m%d')}.png"
+            filename = f"weather_{template_type}_{date.today().strftime('%Y%m%d_%H%M%S')}.png"
             save_path = os.path.join(save_dir, filename)
             image.save(save_path)
             
