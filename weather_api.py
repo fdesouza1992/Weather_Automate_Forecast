@@ -48,7 +48,7 @@ def configure():
     return True
 
 # Fetch weather data from OpenWeatherMap API with robust error handling
-def fetch_weather_data(city_name, state_code, country_code="US"):
+def fetch_weather_data(city_name, state_code, country_code):
     api_key = os.getenv("API_KEY")
     if not api_key:
         messagebox.showerror("API Error", "OpenWeatherMap API key not configured")
@@ -147,15 +147,14 @@ def process_weather_data(data):
     }
 
 # Display weather information in the GUI
-def display_weather(weather_info, city_name, state_code):
+def display_weather(weather_info, city_name, state_code, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
         return
         
-    formatted_city = f"{city_name.title()}, {state_code.upper()}"
+    formatted_city = f"{city_name.title()}, {state_code.upper()}, {country_code.upper()}"
     
     result_box.insert(tk.END, f"\nWeather for {formatted_city}:\n\n", "heading")
-    #result_box.insert(tk.END, "Weather Icon: ", "bold")
     icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
 
     try:
@@ -233,15 +232,16 @@ def get_weather():
     current_weather_data = []
     any_failures = False
     
-    for city_entry, state_entry, _ in location_entries:
+    for city_entry, state_entry, country_entry in location_entries:
         city = city_entry.get().strip()
         state = state_entry.get().strip()
+        country = country_entry.get().strip().upper() or "US"  # Default to US if empty
         
         if not city or not state:
             messagebox.showerror("Error", "Please fill all city/state fields")
             return
             
-        weather_data, error_msg = fetch_weather_data(city, state)
+        weather_data, error_msg = fetch_weather_data(city, state, country)
         if error_msg:
             messagebox.showerror("Weather Error", error_msg)
             any_failures = True
@@ -252,6 +252,7 @@ def get_weather():
             current_weather_data.append({
                 "city": city,
                 "state": state,
+                "country": country,
                 **weather
             })
         else:
@@ -263,7 +264,7 @@ def get_weather():
         toggle_results_visibility(show=True)
         result_box.delete("1.0", tk.END)
         for weather in current_weather_data:
-            display_weather(weather, weather['city'], weather['state'])
+            display_weather(weather, weather['city'], weather['state'], weather['country'])
         export_button_frame.pack(pady=10)
         root.geometry("800x900")
     elif not any_failures:
@@ -284,34 +285,51 @@ def add_location_input(parent_frame=None):
         row_frame, 
         text="City:", 
         bg="#f0f8ff",
-        fg = TEXT_COLOR_DARK, 
+        fg = TEXT_COLOR_DARK,
+        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=0, sticky="w")
 
     city_entry = tk.Entry(
-        row_frame, 
+        row_frame,
         font=("Helvetica", 14), 
-        width=20)
+        width=18)
     
     city_entry.grid(row=1, column=0, padx=5)
     
     # State input
     tk.Label(
         row_frame, 
-        text="State:", 
+        text="State/Region:", 
         bg="#f0f8ff", 
         fg = TEXT_COLOR_DARK,
+        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=1, sticky="w")
     
     state_entry = tk.Entry(
-        row_frame, 
+        row_frame,
         font=("Helvetica", 14), 
-        width=5)
+        width=8)
     
-    state_entry.grid(row=1, column=1, padx=5)
+    state_entry.grid(row=1, column=1, padx=10)
+
+    # Country Input
+    tk.Label(
+        row_frame, 
+        text="Country Code:", 
+        bg="#f0f8ff", 
+        fg = TEXT_COLOR_DARK,
+        justify="center",
+        font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
+    country_entry = tk.Entry(
+        row_frame,
+        font=("Helvetica", 14), 
+        width=8)
+    country_entry.insert(0, "US")                   # Default to US
+    country_entry.grid(row=1, column=2, padx=10)
     
    # Store references for clearing later
-    input_elements.append((city_entry, state_entry)) 
-    location_entries.append((city_entry, state_entry, None))
+    input_elements.append((city_entry, state_entry, country_entry)) 
+    location_entries.append((city_entry, state_entry, country_entry))
 
 # Create weather image using template
 def create_weather_image(template_type="post"):
@@ -358,7 +376,7 @@ def create_weather_image(template_type="post"):
             )
 
             # City name
-            city_text = f"{weather['city'].title()}, {weather['state'].upper()}"
+            city_text = f"{weather['city'].title()}, {weather['state'].upper()}, {weather['country'].upper()}"
             city_pos = TEMPLATES[template_type]["city_position"][i]
             draw.text(
                 city_pos,  # Slightly above temp position
@@ -425,11 +443,26 @@ def init_gui():
     main_frame = tk.Frame(root, bg="#f0f8ff", padx=20, pady=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
     
+    #Logo
+    logo_img = Image.open("Images/FelipeWeatherAppLogo.png")
+    logo_img = logo_img.resize((90, 90), Image.LANCZOS)  
+    logo_photo = ImageTk.PhotoImage(logo_img)
+
     # App Header
-    header_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    header_frame = tk.Frame(
+        main_frame, 
+        bg="#f0f8ff")
     header_frame.pack(fill=tk.X, pady=(0, 20))
-    
-    tk.Label(
+
+    logo_label = tk.Label(
+        header_frame,
+        image=logo_photo,
+        bg="#f0f8ff"
+    )
+    logo_label.image = logo_photo  # Keep a reference
+    logo_label.pack(side=tk.LEFT, pady=10)
+
+    title_label = tk.Label(
         header_frame,
         text="Weather Forecast Post Generator",
         font=("Helvetica", 28, "bold"),
