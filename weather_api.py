@@ -61,27 +61,33 @@ def fetch_weather_data(city_name, state_code, country_code="US"):
     try:
         response = requests.get(complete_url, timeout=15)
         
-        # Check for HTTP errors
-        response.raise_for_status()
+        if response.status_code == 401:
+            return None, "Invalid API key - please check your configuration"
+        elif response.status_code == 404:
+            return None, f"We couldn't find: {city_name}, {state_code}"
+        elif response.status_code == 429:
+            return None, "API rate limit exceeded - try again later"
+        elif response.status_code != 200:
+            return None, f"API error (Code: {response.status_code})"
         
-        # Verify response contains valid JSON
-        try:
-            data = response.json()
-            if not data:
-                raise ValueError("Empty response from API")
-            return data
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON response from API")
+        data = response.json()
+        
+        if not data or 'cod' not in data:
+            return None, "Invalid API response format"
             
-    except requests.exceptions.RequestException as e:
-        error_msg = f"Network error: {str(e)}"
-    except ValueError as e:
-        error_msg = f"Data error: {str(e)}"
+        if data['cod'] != 200:
+            return None, data.get('message', 'Unknown API error')
+            
+        return data, None
+        
+    except requests.exceptions.Timeout:
+        return None, "Request timed out - server took too long to respond"
+    except requests.exceptions.ConnectionError:
+        return None, "Network connection failed - check your internet"
+    except json.JSONDecodeError:
+        return None, "Invalid response format - could not decode JSON"
     except Exception as e:
-        error_msg = f"Unexpected error: {str(e)}"
-    
-    messagebox.showerror("API Error", f"Failed to fetch weather data: {error_msg}")
-    return None
+        return None, f"Unexpected error: {str(e)}"
 
 # Process the raw API data into a more usable format
 def process_weather_data(data):
@@ -159,18 +165,8 @@ def get_weather():
         messagebox.showerror("Error", "Please add at least one location")
         return
 
-    # Hide the input elements
-    toggle_input_visibility(show=False)
-
-    # Show the results area
-    toggle_results_visibility(show=True)
-    
     # Clear previous results
-    if hasattr(toggle_results_visibility, "results_created"):    
-        result_box.delete("1.0", tk.END)
-        current_weather_data = []
-        
-    # Track if any requests failed
+    current_weather_data = []
     any_failures = False
     
     for city_entry, state_entry, _ in location_entries:
@@ -181,30 +177,33 @@ def get_weather():
             messagebox.showerror("Error", "Please fill all city/state fields")
             return
             
-        data = fetch_weather_data(city, state)
-        if data:
-            weather = process_weather_data(data)
-            if weather:
-                display_weather(weather, city, state)
-                current_weather_data.append({
-                    "city": city,
-                    "state": state,
-                    **weather
-                })
-            else:
-                any_failures = True
-                result_box.insert(tk.END, f"\nFailed to get weather for {city}, {state}\n", "bold")
+        weather_data, error_msg = fetch_weather_data(city, state)
+        if error_msg:
+            messagebox.showerror("Weather Error", error_msg)
+            any_failures = True
+            continue
+            
+        weather = process_weather_data(weather_data)
+        if weather:
+            current_weather_data.append({
+                "city": city,
+                "state": state,
+                **weather
+            })
         else:
             any_failures = True
-            result_box.insert(tk.END, f"\nAPI request failed for {city}, {state}\n", "bold")
     
+    # Only show results if we have successful data
     if current_weather_data:
+        toggle_input_visibility(show=False)
+        toggle_results_visibility(show=True)
+        result_box.delete("1.0", tk.END)
+        for weather in current_weather_data:
+            display_weather(weather, weather['city'], weather['state'])
         export_button_frame.pack(pady=10)
         root.geometry("800x900")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
-        toggle_results_visibility(show=False)
-        toggle_input_visibility(show=True)
 
 # Add a new location input row
 def add_location_input(parent_frame=None):  
