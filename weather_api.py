@@ -108,6 +108,10 @@ def process_weather_data(data):
     sunrise_local = sunrise_utc + timedelta(seconds=tz_offset)
     sunset_local = sunset_utc + timedelta(seconds=tz_offset)
 
+    #Current time calculation
+    current_time_utc = datetime.now(timezone.utc)
+    current_time_local = current_time_utc + timedelta(seconds=tz_offset)
+
     return {
         #Temperature Data
         "temp_celsius": round(main["temp"], 1),
@@ -137,7 +141,9 @@ def process_weather_data(data):
         "sunset": sunset_local.strftime('%H:%M:%S'),
 
         #Location Data
-        "timezone": tz_offset
+        "timezone": tz_offset,
+        "current_time": current_time_local.strftime('%H:%M:%S'),
+        "current_date": current_time_local.strftime('%Y-%m-%d')
     }
 
 # Display weather information in the GUI
@@ -211,6 +217,8 @@ def display_weather(weather_info, city_name, state_code):
 
     result_box.insert(tk.END, "Timezone: ", "bold")
     result_box.insert(tk.END, f"{tz_display}\n")
+    result_box.insert(tk.END, "Current Time (24hrs format): ", "bold")
+    result_box.insert(tk.END, f"{weather_info['current_time']} ({weather_info['current_date']})\n")
     result_box.insert(tk.END, "\n----------------------------------------\n")
 
 # Fetch and display weather for all locations
