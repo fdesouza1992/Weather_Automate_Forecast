@@ -522,6 +522,8 @@ def toggle_results_visibility(show=True):
             height=10,
             width=60,
             relief=tk.SUNKEN,
+            bg='white',
+            fg=TEXT_COLOR_DARK,
             bd=2
         )
 
