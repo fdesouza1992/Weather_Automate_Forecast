@@ -320,6 +320,7 @@ def add_location_input(parent_frame=None):
         fg = TEXT_COLOR_DARK,
         justify="center",
         font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
+    
     country_entry = tk.Entry(
         row_frame,
         font=("Helvetica", 14), 
@@ -346,9 +347,11 @@ def create_weather_image(template_type="post"):
         try:
             font_large = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["large"])
             font_medium = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["medium"])
+            font_title = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["title"])
         except:
             font_large = ImageFont.load_default()
             font_medium = ImageFont.load_default()
+            font_title = ImageFont.load_default()
         
         # Add date
         today = date.today().strftime("%A - %B %d, %Y")
@@ -371,7 +374,7 @@ def create_weather_image(template_type="post"):
                 title_pos,
                 title_text,
                 fill=TEXT_COLOR,
-                font=font_large,
+                font=font_title,
                 align="center"
             )
 
