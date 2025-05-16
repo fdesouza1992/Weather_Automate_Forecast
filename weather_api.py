@@ -687,7 +687,7 @@ def reset_input_view():
     add_location_input(location_frame)
     
     # Reset window size
-    root.geometry("800x700")
+    root.geometry("650x650")
 
 # Main function to run the application
 def main():

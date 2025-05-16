@@ -13,3 +13,6 @@ __pycache__/
 
 # Ignore environment variables file
 .env
+
+# Ignore Firebase configuration
+firebase/*.json
