@@ -598,7 +598,7 @@ def toggle_results_visibility(show=True):
             command=lambda: [
                 toggle_results_visibility(show=False),
                 toggle_input_visibility(show=True),
-                reset_input_view()  
+                reset_input_view()
             ],
             **BUTTON_STYLE
         )
@@ -635,13 +635,8 @@ def toggle_input_visibility(show=True):
 def reset_input_view():
     global current_weather_data, location_entries, input_elements
     
-    # Clear all input fields
-    for entry_pair in input_elements:
-        for entry in entry_pair:
-            entry.delete(0, tk.END)
-    
-    # Clear all location frames except the first one
-    for widget in location_frame.winfo_children()[1:]:
+    # Destroy all widgets in the location_frame to completely reset the input area
+    for widget in location_frame.winfo_children():
         widget.destroy()
     
     # Clear all stored references
@@ -651,9 +646,13 @@ def reset_input_view():
     
     # Hide export buttons
     export_button_frame.pack_forget()
+
+    # Clear the result box flag so toggle_results_visibility can recreate it later
+    if hasattr(toggle_results_visibility, "results_created"):
+        del toggle_results_visibility.results_created
     
     # Re-add the initial location input
-    add_location_input()
+    add_location_input(location_frame)
     
     # Reset window size
     root.geometry("800x700")
