@@ -266,7 +266,7 @@ def get_weather():
         for weather in current_weather_data:
             display_weather(weather, weather['city'], weather['state'], weather['country'])
         export_button_frame.pack(pady=10)
-        root.geometry("800x900")
+        root.geometry("650x650")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -320,6 +320,7 @@ def add_location_input(parent_frame=None):
         fg = TEXT_COLOR_DARK,
         justify="center",
         font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
+    
     country_entry = tk.Entry(
         row_frame,
         font=("Helvetica", 14), 
@@ -346,9 +347,11 @@ def create_weather_image(template_type="post"):
         try:
             font_large = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["large"])
             font_medium = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["medium"])
+            font_title = ImageFont.truetype(DEFAULT_FONT, TEMPLATES[template_type]["font_sizes"]["title"])
         except:
             font_large = ImageFont.load_default()
             font_medium = ImageFont.load_default()
+            font_title = ImageFont.load_default()
         
         # Add date
         today = date.today().strftime("%A - %B %d, %Y")
@@ -371,7 +374,7 @@ def create_weather_image(template_type="post"):
                 title_pos,
                 title_text,
                 fill=TEXT_COLOR,
-                font=font_large,
+                font=font_title,
                 align="center"
             )
 
@@ -430,14 +433,19 @@ def init_gui():
     root.title("Weather Forecast Automator")
     root.configure(bg="#f0f8ff")  
     
+    # Set icon
+    root_icon = tk.PhotoImage(file="Images/FelipeWeatherAppLogo.png")
+    root.iconphoto(False, root_icon)
+
     # Set window size and center it
-    window_width = 800
-    window_height = 700
+    window_width = 650
+    window_height = 650
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    root.resizable(False, False)
     
     # Main container with padding
     main_frame = tk.Frame(root, bg="#f0f8ff", padx=20, pady=20)
@@ -445,7 +453,7 @@ def init_gui():
     
     #Logo
     logo_img = Image.open("Images/FelipeWeatherAppLogo.png")
-    logo_img = logo_img.resize((90, 90), Image.LANCZOS)  
+    logo_img = logo_img.resize((150, 150), Image.LANCZOS)  
     logo_photo = ImageTk.PhotoImage(logo_img)
 
     # App Header
@@ -472,8 +480,10 @@ def init_gui():
     
     description_label = tk.Label(
         header_frame,
-        text="Get weather forecasts for up to 5 locations and export as social media posts\n"
-             "Enter city and state codes (e.g. 'Boston, MA') then click 'Get Weather' in order to fetch the data.",
+        text="Forecast up to 5 locations and export weather posts instantly.\n\n"+
+        "Enter city, state/region, and ISO country code (e.g., Boston, MA, US), \n"+
+        "then click 'Get Weather' to retrieve the latest data.\n\n"+
+        "Note: Country codes must follow the ISO format (e.g., US, BR, IT).",
         font=("Helvetica", 14),
         bg="#f0f8ff",
         fg="#7f8c8d"
@@ -544,8 +554,14 @@ def toggle_results_visibility(show=True):
     
     if show and not hasattr(toggle_results_visibility, "results_created"):
         # Create frame if it doesn't exist
-        result_frame = tk.Frame(main_frame, bg="#f0f8ff")
-        result_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        result_frame = tk.Frame(
+            main_frame, 
+            bg="#f0f8ff")
+        
+        result_frame.pack(
+            fill=tk.BOTH, 
+            pady=10, 
+            expand=True)
 
         # Text results
         result_box = tk.Text(
@@ -571,17 +587,41 @@ def toggle_results_visibility(show=True):
         result_label.pack(fill=tk.X)
         result_label.config(fg=TEXT_COLOR_DARK)
 
-        result_box.pack(fill=tk.BOTH, expand=True)
-        result_box.tag_configure("heading", font=("Helvetica", 18, "bold"))
-        result_box.tag_configure("bold", font=("Helvetica", 14, "bold"))
-        result_box.insert(tk.END, "Weather Results:\n", "heading")
-        result_box.insert(tk.END, "                                    \n")
+        result_box.pack(
+            fill=tk.BOTH, 
+            expand=True)
+
+        result_box.tag_configure(
+            "heading", 
+            font=("Helvetica", 18, "bold"))
+        
+        result_box.tag_configure(
+            "bold", 
+            font=("Helvetica", 14, "bold"))
+        
+        result_box.insert(
+            tk.END, 
+            "Weather Results:\n", 
+            "heading")
+        result_box.insert(
+            tk.END, 
+            "                                    \n")
         
         # Scrollbar
-        scrollbar = tk.Scrollbar(result_frame, command=result_box.yview)
+        scrollbar = tk.Scrollbar(
+            result_frame, 
+            command=result_box.yview)
+        
         result_box.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar.pack(
+            side=tk.LEFT, 
+            fill=tk.Y)
+        
+        result_box.pack(
+            side=tk.LEFT, 
+            fill=tk.BOTH, 
+            expand=True)
         
         # Back button at the bottom
         back_button = tk.Button(
@@ -590,7 +630,7 @@ def toggle_results_visibility(show=True):
             command=lambda: [
                 toggle_results_visibility(show=False),
                 toggle_input_visibility(show=True),
-                reset_input_view()  
+                reset_input_view()
             ],
             **BUTTON_STYLE
         )
@@ -618,8 +658,8 @@ def toggle_input_visibility(show=True):
         location_frame.pack(fill=tk.X)
         button_frame.pack(pady=10)
     else:
-        header_frame.pack_forget()
-        description_label.pack_forget()
+        #header_frame.pack_forget()
+        #description_label.pack_forget()
         location_frame.pack_forget()
         button_frame.pack_forget()
 
@@ -627,13 +667,8 @@ def toggle_input_visibility(show=True):
 def reset_input_view():
     global current_weather_data, location_entries, input_elements
     
-    # Clear all input fields
-    for entry_pair in input_elements:
-        for entry in entry_pair:
-            entry.delete(0, tk.END)
-    
-    # Clear all location frames except the first one
-    for widget in location_frame.winfo_children()[1:]:
+    # Destroy all widgets in the location_frame to completely reset the input area
+    for widget in location_frame.winfo_children():
         widget.destroy()
     
     # Clear all stored references
@@ -643,9 +678,13 @@ def reset_input_view():
     
     # Hide export buttons
     export_button_frame.pack_forget()
+
+    # Clear the result box flag so toggle_results_visibility can recreate it later
+    if hasattr(toggle_results_visibility, "results_created"):
+        del toggle_results_visibility.results_created
     
     # Re-add the initial location input
-    add_location_input()
+    add_location_input(location_frame)
     
     # Reset window size
     root.geometry("800x700")
