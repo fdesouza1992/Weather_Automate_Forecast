@@ -266,7 +266,7 @@ def get_weather():
         for weather in current_weather_data:
             display_weather(weather, weather['city'], weather['state'], weather['country'])
         export_button_frame.pack(pady=10)
-        root.geometry("800x900")
+        root.geometry("650x650")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -438,8 +438,8 @@ def init_gui():
     root.iconphoto(False, root_icon)
 
     # Set window size and center it
-    window_width = 800
-    window_height = 700
+    window_width = 650
+    window_height = 650
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
@@ -453,7 +453,7 @@ def init_gui():
     
     #Logo
     logo_img = Image.open("Images/FelipeWeatherAppLogo.png")
-    logo_img = logo_img.resize((90, 90), Image.LANCZOS)  
+    logo_img = logo_img.resize((150, 150), Image.LANCZOS)  
     logo_photo = ImageTk.PhotoImage(logo_img)
 
     # App Header
@@ -480,8 +480,10 @@ def init_gui():
     
     description_label = tk.Label(
         header_frame,
-        text="Get weather forecasts for up to 5 locations and export as social media posts\n"
-             "Enter city and state codes (e.g. 'Boston, MA') then click 'Get Weather' in order to fetch the data.",
+        text="Forecast up to 5 locations and export weather posts instantly.\n\n"+
+        "Enter city, state/region, and ISO country code (e.g., Boston, MA, US), \n"+
+        "then click 'Get Weather' to retrieve the latest data.\n\n"+
+        "Note: Country codes must follow the ISO format (e.g., US, BR, IT).",
         font=("Helvetica", 14),
         bg="#f0f8ff",
         fg="#7f8c8d"
@@ -552,8 +554,14 @@ def toggle_results_visibility(show=True):
     
     if show and not hasattr(toggle_results_visibility, "results_created"):
         # Create frame if it doesn't exist
-        result_frame = tk.Frame(main_frame, bg="#f0f8ff")
-        result_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        result_frame = tk.Frame(
+            main_frame, 
+            bg="#f0f8ff")
+        
+        result_frame.pack(
+            fill=tk.BOTH, 
+            pady=10, 
+            expand=True)
 
         # Text results
         result_box = tk.Text(
@@ -579,17 +587,41 @@ def toggle_results_visibility(show=True):
         result_label.pack(fill=tk.X)
         result_label.config(fg=TEXT_COLOR_DARK)
 
-        result_box.pack(fill=tk.BOTH, expand=True)
-        result_box.tag_configure("heading", font=("Helvetica", 18, "bold"))
-        result_box.tag_configure("bold", font=("Helvetica", 14, "bold"))
-        result_box.insert(tk.END, "Weather Results:\n", "heading")
-        result_box.insert(tk.END, "                                    \n")
+        result_box.pack(
+            fill=tk.BOTH, 
+            expand=True)
+
+        result_box.tag_configure(
+            "heading", 
+            font=("Helvetica", 18, "bold"))
+        
+        result_box.tag_configure(
+            "bold", 
+            font=("Helvetica", 14, "bold"))
+        
+        result_box.insert(
+            tk.END, 
+            "Weather Results:\n", 
+            "heading")
+        result_box.insert(
+            tk.END, 
+            "                                    \n")
         
         # Scrollbar
-        scrollbar = tk.Scrollbar(result_frame, command=result_box.yview)
+        scrollbar = tk.Scrollbar(
+            result_frame, 
+            command=result_box.yview)
+        
         result_box.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar.pack(
+            side=tk.LEFT, 
+            fill=tk.Y)
+        
+        result_box.pack(
+            side=tk.LEFT, 
+            fill=tk.BOTH, 
+            expand=True)
         
         # Back button at the bottom
         back_button = tk.Button(
@@ -626,8 +658,8 @@ def toggle_input_visibility(show=True):
         location_frame.pack(fill=tk.X)
         button_frame.pack(pady=10)
     else:
-        header_frame.pack_forget()
-        description_label.pack_forget()
+        #header_frame.pack_forget()
+        #description_label.pack_forget()
         location_frame.pack_forget()
         button_frame.pack_forget()
 
