@@ -592,15 +592,6 @@ def toggle_results_visibility(show=True):
     elif not show and hasattr(toggle_results_visibility, "results_created"):
         result_frame.pack_forget()
 
-# Add hover effect to buttons
-def add_hover_effect(button, hover_color="#c8a2c8", default_color="white"):
-    def on_enter(e):
-        button.config(background=hover_color)
-    def on_leave(e):
-        button.config(background=default_color)
-    button.bind("<Enter>", on_enter)
-    button.bind("<Leave>", on_leave)
-
 # Show or hide the input elements (description, location inputs, buttons)
 def toggle_input_visibility(show=True):
     if show:
