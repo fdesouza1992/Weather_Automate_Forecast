@@ -1,8 +1,7 @@
-# Description: An enhanced weather app that fetches and exports weather data
 import requests
 import json
 import tkinter as tk
-from tkinter import messagebox, filedialog, ttk
+from tkinter import messagebox, filedialog
 from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
@@ -15,6 +14,9 @@ from settings import (
 )
 from io import BytesIO
 import urllib.request
+from ttkbootstrap import Window, Style
+from ttkbootstrap.constants import *
+from tkinter import ttk
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -29,6 +31,9 @@ preview_label = None
 header_frame = None
 description_label = None
 button_frame = None
+
+# Image references to prevent garbage collection
+image_references = {}
 
 # Loads environment variables and verifies required template images exist
 def configure():
@@ -172,11 +177,9 @@ def display_weather(weather_info, city_name, state_code, country_code):
         photo = ImageTk.PhotoImage(im)
         
         # Create a label to display the image
-        icon_label = tk.Label(
+        icon_label = ttk.Label(
             result_box, 
-            image=photo, 
-            bg='white', 
-            bd=0)
+            image=photo)
         icon_label.image = photo  # Keep a reference!
         
         # Insert the image into the text widget
@@ -277,19 +280,16 @@ def add_location_input(parent_frame=None):
         return
         
     frame = parent_frame if parent_frame else location_frame
-    row_frame = tk.Frame(frame, bg="#f0f8ff")
+    row_frame = ttk.Frame(frame)
     row_frame.pack(pady=5)
     
     # City input
-    tk.Label(
+    ttk.Label(
         row_frame, 
         text="City:", 
-        bg="#f0f8ff",
-        fg = TEXT_COLOR_DARK,
-        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=0, sticky="w")
 
-    city_entry = tk.Entry(
+    city_entry = ttk.Entry(
         row_frame,
         font=("Helvetica", 14), 
         width=18)
@@ -297,15 +297,12 @@ def add_location_input(parent_frame=None):
     city_entry.grid(row=1, column=0, padx=5)
     
     # State input
-    tk.Label(
+    ttk.Label(
         row_frame, 
         text="State/Region:", 
-        bg="#f0f8ff", 
-        fg = TEXT_COLOR_DARK,
-        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=1, sticky="w")
     
-    state_entry = tk.Entry(
+    state_entry = ttk.Entry(
         row_frame,
         font=("Helvetica", 14), 
         width=8)
@@ -313,18 +310,16 @@ def add_location_input(parent_frame=None):
     state_entry.grid(row=1, column=1, padx=10)
 
     # Country Input
-    tk.Label(
+    ttk.Label(
         row_frame, 
         text="Country Code:", 
-        bg="#f0f8ff", 
-        fg = TEXT_COLOR_DARK,
-        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
     
-    country_entry = tk.Entry(
+    country_entry = ttk.Entry(
         row_frame,
         font=("Helvetica", 14), 
         width=8)
+    
     country_entry.insert(0, "US")                   # Default to US
     country_entry.grid(row=1, column=2, padx=10)
     
@@ -427,16 +422,11 @@ def create_weather_image(template_type="post"):
 
 # Initialize the GUI with enhanced styling
 def init_gui():
-    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame
+    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references
     
-    root = tk.Tk()
+    root = Window(themename="pulse")
     root.title("Weather Forecast Automator")
-    root.configure(bg="#f0f8ff")  
     
-    # Set icon
-    root_icon = tk.PhotoImage(file="Images/FelipeWeatherAppLogo.png")
-    root.iconphoto(False, root_icon)
-
     # Set window size and center it
     window_width = 650
     window_height = 650
@@ -445,103 +435,95 @@ def init_gui():
     x = (screen_width // 2) - (window_width // 2)
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    root.resizable(False, False)
+    root.resizable(False, False) 
     
-    # Main container with padding
-    main_frame = tk.Frame(root, bg="#f0f8ff", padx=20, pady=20)
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    # Load and set window icon
+    try:
+        icon_path = "Images/FelipeWeatherAppLogo.png"
+        if os.path.exists(icon_path):
+            img = Image.open(icon_path)
+            img = img.resize((32, 32), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            image_references['icon'] = photo  # Keep reference
+            root.iconphoto(True, photo)
+    except Exception as e:
+        print(f"Could not load window icon: {e}")
     
-    #Logo
-    logo_img = Image.open("Images/FelipeWeatherAppLogo.png")
-    logo_img = logo_img.resize((150, 150), Image.LANCZOS)  
-    logo_photo = ImageTk.PhotoImage(logo_img)
-
     # App Header
-    header_frame = tk.Frame(
-        main_frame, 
-        bg="#f0f8ff")
+    header_frame = ttk.Frame(main_frame)
     header_frame.pack(fill=tk.X, pady=(0, 20))
 
-    logo_label = tk.Label(
-        header_frame,
-        image=logo_photo,
-        bg="#f0f8ff"
-    )
-    logo_label.image = logo_photo  # Keep a reference
-    logo_label.pack(side=tk.LEFT, pady=10)
+    # Load logo image
+    try:
+        logo_path = "Images/FelipeWeatherAppLogo.png"
+        if os.path.exists(logo_path):
+            img = Image.open(logo_path).resize((150, 150), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            image_references['logo'] = photo  # Keep reference
+            logo_label = ttk.Label(header_frame, image=photo)
+            logo_label.pack(side=tk.LEFT, pady=10)
+    except Exception as e:
+        print(f"Could not load logo image: {e}")
 
-    title_label = tk.Label(
+    ttk.Label(
         header_frame,
         text="Weather Forecast Post Generator",
-        font=("Helvetica", 28, "bold"),
-        bg="#f0f8ff",
-        fg="#2c3e50"
+        font=("Helvetica", 28, "bold")
     ).pack(side=tk.TOP, pady=10)
     
-    description_label = tk.Label(
+    description_label = ttk.Label(
         header_frame,
         text="Forecast up to 5 locations and export weather posts instantly.\n\n"+
         "Enter city, state/region, and ISO country code (e.g., Boston, MA, US), \n"+
         "then click 'Get Weather' to retrieve the latest data.\n\n"+
         "Note: Country codes must follow the ISO format (e.g., US, BR, IT).",
-        font=("Helvetica", 14),
-        bg="#f0f8ff",
-        fg="#7f8c8d"
-    )
+        font=("Helvetica", 14))
     description_label.pack(side=tk.TOP)
     
     # Location input frame
-    location_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    location_frame = ttk.Frame(main_frame)
     location_frame.pack(fill=tk.X)
     
     # Add initial location input
     add_location_input(location_frame)
     
     # Buttons frame
-    button_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
     
     # Add location button
-    add_button = tk.Button(
+    add_button = ttk.Button(
         button_frame,
         text="+ Add Location",
         command=lambda: add_location_input(),
-        **BUTTON_STYLE
-    )
+        bootstyle="primary")
     add_button.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(add_button)
     
     # Get weather button
-    weather_button = tk.Button(
+    weather_button = ttk.Button(
         button_frame,
         text="Get Weather",
         command=get_weather,
-        **BUTTON_STYLE
-    )
+        bootstyle="success")
     weather_button.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(weather_button)
     
     # Export buttons frame
-    export_button_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    export_button_frame = ttk.Frame(main_frame)
     
     # Export buttons
-    export_post = tk.Button(
+    export_post = ttk.Button(
         export_button_frame,
         text="Export as Post",
         command=lambda: create_weather_image("post"),
-        **BUTTON_STYLE
-    )
+        bootstyle="info")
     export_post.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(export_post)
     
-    export_story = tk.Button(
+    export_story = ttk.Button(
         export_button_frame,
         text="Export as Story",
         command=lambda: create_weather_image("story"),
-        **BUTTON_STYLE
-    )
+        bootstyle="info")
     export_story.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(export_story)
     
     # Ensure export buttons are hidden initially
     export_button_frame.pack_forget()
@@ -550,20 +532,23 @@ def init_gui():
 
 # Show or hide the results and preview sections
 def toggle_results_visibility(show=True):
-    global result_frame, preview_frame, preview_canvas, preview_label, result_box
+    global result_frame, result_box
     
     if show and not hasattr(toggle_results_visibility, "results_created"):
         # Create frame if it doesn't exist
-        result_frame = tk.Frame(
-            main_frame, 
-            bg="#f0f8ff")
-        
-        result_frame.pack(
-            fill=tk.BOTH, 
-            pady=10, 
-            expand=True)
+        result_frame = ttk.Frame(main_frame)
+        result_frame.pack(fill=tk.BOTH, pady=10, expand=True)
 
-        # Text results
+        # Create results label
+        result_label = ttk.Label(
+            result_frame,
+            text="Results Preview Window: ", 
+            font=("Helvetica", 18, "bold"),
+            justify="left"
+        )
+        result_label.pack(fill=tk.X)
+
+        # Text results - using tk.Text for better formatting
         result_box = tk.Text(
             result_frame,
             wrap=tk.WORD,
@@ -575,56 +560,23 @@ def toggle_results_visibility(show=True):
             fg=TEXT_COLOR_DARK,
             bd=2
         )
+        result_box.pack(fill=tk.BOTH, expand=True)
 
-        result_label = tk.Label(
-            result_frame,
-            text="Results Preview Window: ", 
-            font=("Helvetica", 18, "bold"),
-            bg="#f0f8ff",
-            justify="left"
-        )
-
-        result_label.pack(fill=tk.X)
-        result_label.config(fg=TEXT_COLOR_DARK)
-
-        result_box.pack(
-            fill=tk.BOTH, 
-            expand=True)
-
-        result_box.tag_configure(
-            "heading", 
-            font=("Helvetica", 18, "bold"))
-        
-        result_box.tag_configure(
-            "bold", 
-            font=("Helvetica", 14, "bold"))
-        
-        result_box.insert(
-            tk.END, 
-            "Weather Results:\n", 
-            "heading")
-        result_box.insert(
-            tk.END, 
-            "                                    \n")
+        # Configure tags for styled text
+        result_box.tag_configure("heading", font=("Helvetica", 18, "bold"))        
+        result_box.tag_configure("bold", font=("Helvetica", 14, "bold"))
         
         # Scrollbar
-        scrollbar = tk.Scrollbar(
-            result_frame, 
-            command=result_box.yview)
-        
+        scrollbar = ttk.Scrollbar(result_frame, command=result_box.yview)
         result_box.config(yscrollcommand=scrollbar.set)
-
-        scrollbar.pack(
-            side=tk.LEFT, 
-            fill=tk.Y)
+        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+        result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        result_box.pack(
-            side=tk.LEFT, 
-            fill=tk.BOTH, 
-            expand=True)
+        result_box.insert(tk.END, "Weather Results:\n", "heading")
+        result_box.insert(tk.END, "----------------------------------------------------\n")
         
         # Back button at the bottom
-        back_button = tk.Button(
+        back_button = ttk.Button(
             result_frame,
             text="← Back to Input",
             command=lambda: [
@@ -632,10 +584,9 @@ def toggle_results_visibility(show=True):
                 toggle_input_visibility(show=True),
                 reset_input_view()
             ],
-            **BUTTON_STYLE
+            bootstyle="secondary"
         )
         back_button.pack(pady=10)
-        add_hover_effect(back_button)
 
         toggle_results_visibility.results_created = True
     elif not show and hasattr(toggle_results_visibility, "results_created"):
