@@ -17,6 +17,7 @@ import urllib.request
 from ttkbootstrap import Window, Style
 from ttkbootstrap.constants import *
 from tkinter import ttk
+from firebase_config import db
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -63,6 +64,14 @@ def fetch_weather_data(city_name, state_code, country_code):
     query = f"{city_name},{state_code},{country_code}"
     complete_url = f"{base_url}appid={api_key}&q={query}&units=metric"
     
+    # Uncomment for debugging but leave commented in production
+    # print("[DEBUG] API KEY:", api_key)
+    # print("[DEBUG] City:", city_name)
+    # print("[DEBUG] State:", state_code)
+    # print("[DEBUG] Country:", country_code)
+    # print("[DEBUG] Final Query String:", f"{city_name},{state_code},{country_code}")
+    # print("[DEBUG] Final URL:", complete_url)
+
     try:
         response = requests.get(complete_url, timeout=15)
         
@@ -238,10 +247,15 @@ def get_weather():
     for city_entry, state_entry, country_entry in location_entries:
         city = city_entry.get().strip()
         state = state_entry.get().strip()
-        country = country_entry.get().strip().upper() or "US"  # Default to US if empty
-        
-        if not city or not state:
-            messagebox.showerror("Error", "Please fill all city/state fields")
+
+        # Handle Combobox and Entry compatibility
+        if isinstance(country_entry, ttk.Combobox):
+            country = country_entry.get().strip().upper()
+        else:
+            country = country_entry.get().strip().upper()
+
+        if not city or not state or not country:
+            messagebox.showerror("Error", "Please fill all city/state/country fields")
             return
             
         weather_data, error_msg = fetch_weather_data(city, state, country)
@@ -315,12 +329,24 @@ def add_location_input(parent_frame=None):
         text="Country Code:", 
         font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
     
-    country_entry = ttk.Entry(
+    country_entry = ttk.Combobox(
         row_frame,
         font=("Helvetica", 14), 
-        width=8)
+        width=8,
+        values=list(fetch_country_codes().keys()),
+        state="readonly")
     
-    country_entry.insert(0, "US")                   # Default to US
+    country_entry.set("US")  # Default to US
+    country_entry.bind("<<ComboboxSelected>>", lambda e: country_entry.set(country_entry.get().upper()))
+
+    # Uncomment the following lines if you want to use a regular entry instead of a combobox
+    # country_entry = ttk.Entry(
+    #     row_frame,
+    #     font=("Helvetica", 14), 
+    #     width=8)
+    
+    #country_entry.insert(0, "US")                   # Default to US
+
     country_entry.grid(row=1, column=2, padx=10)
     
    # Store references for clearing later
@@ -590,8 +616,6 @@ def toggle_input_visibility(show=True):
         location_frame.pack(fill=tk.X)
         button_frame.pack(pady=10)
     else:
-        #header_frame.pack_forget()
-        #description_label.pack_forget()
         location_frame.pack_forget()
         button_frame.pack_forget()
 
@@ -620,6 +644,18 @@ def reset_input_view():
     
     # Reset window size
     root.geometry("650x650")
+
+# Fetch country codes from Firestore and populate the country entry
+def fetch_country_codes():
+    try:
+        countries_ref = db.collection("countries")
+        countries = countries_ref.stream()
+        
+        country_codes = {doc.id: doc.to_dict()["name"] for doc in countries}
+        return country_codes
+    except Exception as e:
+        print(f"Error fetching country codes: {e}")
+        return {}
 
 # Main function to run the application
 def main():
