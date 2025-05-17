@@ -221,7 +221,7 @@ def display_weather(weather_info, city_name, state_code, country_code):
     result_box.insert(tk.END, f"{tz_display}\n")
     result_box.insert(tk.END, "Current Time (24hrs format): ", "bold")
     result_box.insert(tk.END, f"{weather_info['current_time']} ({weather_info['current_date']})\n")
-    result_box.insert(tk.END, "\n----------------------------------------\n")
+    result_box.insert(tk.END, "\n------------------------------------------------------------------------------\n")
 
 # Fetch and display weather for all locations
 def get_weather():
@@ -522,7 +522,7 @@ def init_gui():
         export_button_frame,
         text="Export as Story",
         command=lambda: create_weather_image("story"),
-        bootstyle="info")
+        bootstyle="warning")
     export_story.pack(side=tk.LEFT, padx=5)
     
     # Ensure export buttons are hidden initially
@@ -539,15 +539,6 @@ def toggle_results_visibility(show=True):
         result_frame = ttk.Frame(main_frame)
         result_frame.pack(fill=tk.BOTH, pady=10, expand=True)
 
-        # Create results label
-        result_label = ttk.Label(
-            result_frame,
-            text="Results Preview Window: ", 
-            font=("Helvetica", 18, "bold"),
-            justify="left"
-        )
-        result_label.pack(fill=tk.X)
-
         # Text results - using tk.Text for better formatting
         result_box = tk.Text(
             result_frame,
@@ -558,7 +549,9 @@ def toggle_results_visibility(show=True):
             relief=tk.SUNKEN,
             bg='white',
             fg=TEXT_COLOR_DARK,
-            bd=2
+            bd=2,
+            padx=10,
+            pady=10
         )
         result_box.pack(fill=tk.BOTH, expand=True)
 
@@ -569,24 +562,21 @@ def toggle_results_visibility(show=True):
         # Scrollbar
         scrollbar = ttk.Scrollbar(result_frame, command=result_box.yview)
         result_box.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+        scrollbar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        result_box.insert(tk.END, "Weather Results:\n", "heading")
-        result_box.insert(tk.END, "----------------------------------------------------\n")
         
         # Back button at the bottom
         back_button = ttk.Button(
             result_frame,
-            text="← Back to Input",
+            text="←Back to Input",
             command=lambda: [
                 toggle_results_visibility(show=False),
                 toggle_input_visibility(show=True),
                 reset_input_view()
             ],
-            bootstyle="secondary"
+            bootstyle="danger"
         )
-        back_button.pack(pady=10)
+        back_button.pack(pady=10, padx=5)
 
         toggle_results_visibility.results_created = True
     elif not show and hasattr(toggle_results_visibility, "results_created"):
