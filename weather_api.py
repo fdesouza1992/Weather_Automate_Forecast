@@ -269,7 +269,7 @@ def get_weather():
         for weather in current_weather_data:
             display_weather(weather, weather['city'], weather['state'], weather['country'])
         export_button_frame.pack(pady=10)
-        root.geometry("650x650")
+        root.geometry("675x675")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -451,7 +451,7 @@ def init_gui():
     
     # App Header
     header_frame = ttk.Frame(main_frame)
-    header_frame.pack(fill=tk.X, pady=(0, 20))
+    header_frame.pack(fill=tk.X, pady=(10, 20))
 
     # Load logo image
     try:
@@ -461,7 +461,7 @@ def init_gui():
             photo = ImageTk.PhotoImage(img)
             image_references['logo'] = photo  # Keep reference
             logo_label = ttk.Label(header_frame, image=photo)
-            logo_label.pack(side=tk.LEFT, pady=10)
+            logo_label.pack(side=tk.LEFT, pady=10, padx=10)
     except Exception as e:
         print(f"Could not load logo image: {e}")
 
@@ -537,7 +537,7 @@ def toggle_results_visibility(show=True):
     if show and not hasattr(toggle_results_visibility, "results_created"):
         # Create frame if it doesn't exist
         result_frame = ttk.Frame(main_frame)
-        result_frame.pack(fill=tk.BOTH, pady=10, expand=True)
+        result_frame.pack(fill=tk.BOTH, pady=10, padx=10, expand=True)
 
         # Text results - using tk.Text for better formatting
         result_box = tk.Text(
