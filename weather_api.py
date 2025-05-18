@@ -98,50 +98,80 @@ def fetch_weather_data(city_name, state_code, country_code):
 
 # Process the raw API data into a more usable format
 def process_weather_data(data):
-    if data.get("cod") != 200:
+    if not data:
         return None
-        
-    main = data["main"]
-    weather = data["weather"][0]
-    wind = data.get("wind", {})
-    sys = data.get("sys", {})
-    tz_offset = data.get("timezone", 0)  # in seconds
-    
-    # Convert timestamps to local time
-    sunrise_utc = datetime.fromtimestamp(sys["sunrise"], timezone.utc)
-    sunset_utc = datetime.fromtimestamp(sys["sunset"], timezone.utc)
-    
-    # Apply timezone offset
-    sunrise_local = sunrise_utc + timedelta(seconds=tz_offset)
-    sunset_local = sunset_utc + timedelta(seconds=tz_offset)
 
-    #Current time calculation
-    current_time_utc = datetime.now(timezone.utc)
-    current_time_local = current_time_utc + timedelta(seconds=tz_offset)
+    current = data.get("current", {})
+    daily = data.get("daily", [{}])[0]  # Get today's weather
+    tz_offset = data.get("timezone_offset", 0)  # in seconds
+
+    def timestamp_to_local(ts):
+        utc_time = datetime.fromtimestamp(ts, timezone.utc)
+        return utc_time + timedelta(seconds=tz_offset)
+
+    # Convert timestamps to local time
+    sunrise_local = timestamp_to_local(current.get("sunrise", 0))
+    sunset_local = timestamp_to_local(current.get("sunset", 0))
+
+    # Current time calculation
+    current_time_local = datetime.now(timezone.utc) + timedelta(seconds=tz_offset)
+
+    # Temperature data (using daily forecast for min/max)
+    temp = current.get("temp", 0)
+    feels_like = current.get("feels_like", 0)
+    temp_min = daily.get("temp", {}).get("min", temp)
+    temp_max = daily.get("temp", {}).get("max", temp)
+    humidity = current.get("humidity", 0)
+    pressure = current.get("pressure", 0)
+    dew_point = current.get("dew_point", 0)
+    uvi = current.get("uvi", 0)
+    clouds = current.get("clouds", 0)
+    sea_level = current.get("sea_level", 0)
+    visibility = current.get("visibility", 0)
+
+    # Weather conditions
+    weather = current.get("weather", [{}])[0]  
+    condition = weather.get("main", "")
+    description = weather.get("description", "").capitalize()
+    icon = weather.get("icon", "")
+
+    # Wind data
+    wind_speed = current.get("wind_speed", 0)
+    wind_deg = current.get("wind_deg", 0)
+    wind_gust = current.get("wind_gust", 0)
+
+    timezone_name = data.get("timezone", "")
+
 
     return {
         #Temperature Data
-        "temp_celsius": round(main["temp"], 1),
-        "temp_fahrenheit": round(main["temp"] * 9/5 + 32, 1),
-        "feels_like_celsius": round(main["feels_like"], 1),
-        "feels_like_fahrenheit": round(main["feels_like"] * 9/5 + 32, 1),
-        "temp_min_celsius": round(main["temp_min"], 1),
-        "temp_min_fahrenheit": round(main["temp_min"] * 9/5 + 32, 1),
-        "temp_max_celsius": round(main["temp_max"], 1),
-        "temp_max_fahrenheit": round(main["temp_max"] * 9/5 + 32, 1),
+        "temp_celsius": round(temp, 1),
+        "temp_fahrenheit": round(temp * 9/5 + 32, 1),
+        "feels_like_celsius": round(feels_like, 1),
+        "feels_like_fahrenheit": round(feels_like * 9/5 + 32, 1),
+        "temp_min_celsius": round(temp_min, 1),
+        "temp_min_fahrenheit": round(temp_min * 9/5 + 32, 1),
+        "temp_max_celsius": round(temp_max, 1),
+        "temp_max_fahrenheit": round(temp_max * 9/5 + 32, 1),
 
         #Atmospheric Data
-        "pressure": main["pressure"],
-        "humidity": main["humidity"],
-        "sea_level": main.get("sea_level", 0),
+        "pressure": pressure,
+        "humidity": humidity,
+        "dew_point": dew_point,
+        "uvi": uvi,
+        "clouds": clouds,
+        "visibility": visibility,
+        "sea_level": sea_level,
 
         #Weather Conditions
-        "condition": weather["main"],
-        "description": weather["description"].capitalize(),
-        "icon": weather["icon"],
+        "condition": condition,
+        "description": description,
+        "icon": icon,
 
         #Wind Data
-        "wind_speed": round(wind.get("speed", 0), 1),
+        "wind_speed": round(wind_speed, 1),
+        "wind_deg": wind_deg,
+        "wind_gust": round(wind_gust, 1),
 
         #Sunrise/Sunset Data
         "sunrise": sunrise_local.strftime('%H:%M:%S'),
@@ -149,20 +179,12 @@ def process_weather_data(data):
 
         #Location Data
         "timezone": tz_offset,
+        "timezone_name": timezone_name,
         "current_time": current_time_local.strftime('%H:%M:%S'),
         "current_date": current_time_local.strftime('%Y-%m-%d')
     }
 
-
-
-
-
-
-
-
-
- # Display weather information in the GUI
-
+# Display weather information in the GUI
 def display_weather(weather_info, city_name, state_code, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
@@ -233,7 +255,6 @@ def display_weather(weather_info, city_name, state_code, country_code):
     result_box.insert(tk.END, "Current Time (24hrs format): ", "bold")
     result_box.insert(tk.END, f"{weather_info['current_time']} ({weather_info['current_date']})\n")
     result_box.insert(tk.END, "\n------------------------------------------------------------------------------\n")
-
 
 # Fetch and display weather for all locations
 def get_weather():
