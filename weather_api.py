@@ -61,7 +61,11 @@ def fetch_weather_data(city_name, state_name, country_code):
         return None
     
     # Step 1: Get coordinates for the city using the Direct Geocoding API
-    geocode_url= f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&limit=5&appid={api_key}"
+    if country_code == "US":
+        # For US, use state abbreviation
+        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&limit=5&appid={api_key}"
+    else:
+        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{country_code}&limit=5&appid={api_key}"
 
     try:
         # Get location coordinates
@@ -71,7 +75,7 @@ def fetch_weather_data(city_name, state_name, country_code):
         
         geo_data = geo_response.json()
         if not geo_data:
-            return None, f"Geocoding API returned no results for {city_name}, {state_name}, {country_code}"
+            return None, f"Geocoding API returned no results for {city_name}, {state_name if country_code == 'US' else ''}, {country_code}"
         
         # Extract latitude and longitude
         lat = geo_data[0]['lat']
@@ -104,6 +108,7 @@ def process_weather_data(data):
     current = data.get("current", {})
     daily = data.get("daily", [{}])[0]  # Get today's weather
     tz_offset = data.get("timezone_offset", 0)  # in seconds
+    timezone_name = data.get("timezone", "")
 
     def timestamp_to_local(ts):
         utc_time = datetime.fromtimestamp(ts, timezone.utc)
@@ -139,9 +144,6 @@ def process_weather_data(data):
     wind_speed = current.get("wind_speed", 0)
     wind_deg = current.get("wind_deg", 0)
     wind_gust = current.get("wind_gust", 0)
-
-    timezone_name = data.get("timezone", "")
-
 
     return {
         #Temperature Data
@@ -190,7 +192,7 @@ def display_weather(weather_info, city_name, state_name, country_code):
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
         return
         
-    formatted_city = f"{city_name.title()}, {state_name.upper()}, {country_code.upper()}"
+    formatted_city = f"{weather_info['city'].title()}, {weather_info['state'].upper()}, {weather_info['country'].upper()}"
     
     result_box.insert(tk.END, f"Weather for {formatted_city}:\n", "heading")
     icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
@@ -286,10 +288,14 @@ def get_weather():
         else:
             country = country_entry.get().strip().upper()
 
-        if not city or not state or not country:
-            messagebox.showerror("Error", "Please fill all city/state/country fields")
+        if not city or not country:
+            messagebox.showerror("Error", "Please fill all city/country fields")
             return
-            
+        
+        if country == 'US' and not state:
+            messagebox.showerror("Error", "Please fill state field for US locations")
+            return
+        
         weather_data, error_msg = fetch_weather_data(city, state, country)
         if error_msg:
             messagebox.showerror("Weather Error", error_msg)
@@ -298,12 +304,12 @@ def get_weather():
             
         weather = process_weather_data(weather_data)
         if weather:
-            current_weather_data.append({
+            location_info = {
                 "city": city,
                 "state": state,
                 "country": country,
-                **weather
-            })
+            }
+            current_weather_data.append({**location_info, **weather})
         else:
             any_failures = True
     
