@@ -18,6 +18,7 @@ from ttkbootstrap import Window, Style
 from ttkbootstrap.constants import *
 from tkinter import ttk
 from firebase_config import db
+from login_screen import LoginScreen
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -705,8 +706,37 @@ def main():
     if not configure():
         return  # Exit if configuration fails
 
-    configure()
-    root = init_gui()
+    # Create root window
+    root = Window(themename="pulse")
+    root.title("Weather Forecast Automator")
+    
+    # Set smaller window size for login screen
+    window_width = 500
+    window_height = 700
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width // 2) - (window_width // 2)
+    y = (screen_height // 2) - (window_height // 2)
+    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    root.resizable(False, False)
+    
+    def on_login_success(uid, user_data):
+        # Destroy login screen widgets
+        for widget in root.winfo_children():
+            widget.destroy()
+        
+        # Resize window for main app
+        root.geometry("675x675")  # Your existing size
+        
+        # Initialize your existing GUI exactly as before
+        init_gui()
+        
+        # Optional: Print login confirmation
+        print(f"User logged in: {user_data.get('name', 'User')}")
+    
+    # Show login screen first
+    LoginScreen(root, on_login_success)
+    
     root.mainloop()
 
 if __name__ == "__main__":

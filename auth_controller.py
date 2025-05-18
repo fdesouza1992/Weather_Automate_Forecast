@@ -64,14 +64,3 @@ def delete_user(uid):
 #        return None
 
 
-# Testing the create_user function
-create_user(
-    email="fdesouza.dunkin@gmail.com",
-    password="Password123",
-    display_name="Felipe De Souza",
-    phone_number="+1-774-223-2456"
-)
-
-# Testing the verify_id_token function
-#delete_user()
-
