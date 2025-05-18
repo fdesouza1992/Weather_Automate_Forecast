@@ -351,7 +351,7 @@ def add_location_input(parent_frame=None):
     state_entry = ttk.Entry(
         row_frame,
         font=("Helvetica", 14), 
-        width=8)
+        width=18)
     
     state_entry.grid(row=1, column=1, padx=10)
 
