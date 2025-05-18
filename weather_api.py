@@ -405,7 +405,6 @@ def create_weather_image(template_type="post"):
             font_large = ImageFont.load_default()
             font_medium = ImageFont.load_default()
             font_title = ImageFont.load_default()
-        
         # Add date
         today = date.today().strftime("%A - %B %d, %Y")
         draw.text(
@@ -415,10 +414,15 @@ def create_weather_image(template_type="post"):
             font=font_medium
         )
         
+        country_codes = fetch_country_codes()
+
         # Add weather for each location
         for i, weather in enumerate(current_weather_data):
             if i >= len(TEMPLATES[template_type]["city_position"]):
                 break
+
+            #Get the country name from the dictionary
+            country_code = weather['country'].upper()
 
             # App Title
             title_text = "Weather Forecast Generator"
@@ -432,7 +436,7 @@ def create_weather_image(template_type="post"):
             )
 
             # City name
-            city_text = f"{weather['city'].title()}, {weather['state']}, {weather['country'].upper()}"
+            city_text = f"{weather['city'].title()}, {country_code}"
             city_pos = TEMPLATES[template_type]["city_position"][i]
             draw.text(
                 city_pos,  # Slightly above temp position
@@ -465,7 +469,7 @@ def create_weather_image(template_type="post"):
         # Save the image
         save_dir = filedialog.askdirectory(title="Select Save Location")
         if save_dir:
-            filename = f"weather_{template_type}_{date.today().strftime('%Y%m%d_%H%M%S')}.png"
+            filename = f"Weather_{template_type}_{today}.png"
             save_path = os.path.join(save_dir, filename)
             image.save(save_path)
             
