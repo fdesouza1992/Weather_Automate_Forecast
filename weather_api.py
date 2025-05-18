@@ -60,40 +60,33 @@ def fetch_weather_data(city_name, state_code, country_code):
         messagebox.showerror("API Error", "OpenWeatherMap API key not configured")
         return None
     
-    base_url = "http://api.openweathermap.org/data/2.5/weather?"
-    query = f"{city_name},{state_code},{country_code}"
-    complete_url = f"{base_url}appid={api_key}&q={query}&units=metric"
-    
-    # Uncomment for debugging but leave commented in production
-    # print("[DEBUG] API KEY:", api_key)
-    # print("[DEBUG] City:", city_name)
-    # print("[DEBUG] State:", state_code)
-    # print("[DEBUG] Country:", country_code)
-    # print("[DEBUG] Final Query String:", f"{city_name},{state_code},{country_code}")
-    # print("[DEBUG] Final URL:", complete_url)
+    # Step 1: Get coordinates for the city using the Direct Geocoding API
+    geocode_url= f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_code},{country_code}&limit=5&appid={api_key}"
 
     try:
-        response = requests.get(complete_url, timeout=15)
+        # Get location coordinates
+        geo_response = requests.get(geocode_url, timeout=15)
+        if geo_response.status_code != 200:
+            return None, f"Geocoding API error (Code: {geo_response.status_code})"
         
-        if response.status_code == 401:
-            return None, "Invalid API key - please check your configuration"
-        elif response.status_code == 404:
-            return None, f"We couldn't find: {city_name}, {state_code}"
-        elif response.status_code == 429:
-            return None, "API rate limit exceeded - try again later"
-        elif response.status_code != 200:
-            return None, f"API error (Code: {response.status_code})"
+        geo_data = geo_response.json()
+        if not geo_data:
+            return None, f"Geocoding API returned no results for {city_name}, {state_code}, {country_code}"
         
-        data = response.json()
+        # Extract latitude and longitude
+        lat = geo_data[0]['lat']
+        lon = geo_data[0]['lon']
+
+    # Step 2: Use the coordinates to get weather data
+        weather_url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=minutely&units=metric&appid={api_key}"
+        weather_response = requests.get(weather_url, timeout=15)
+
+        if weather_response.status_code != 200:
+            return None, f"Weather API error (Code: {weather_response.status_code})"
         
-        if not data or 'cod' not in data:
-            return None, "Invalid API response format"
-            
-        if data['cod'] != 200:
-            return None, data.get('message', 'Unknown API error')
-            
-        return data, None
-        
+        weather_data = weather_response.json()
+        return weather_data, None
+    
     except requests.exceptions.Timeout:
         return None, "Request timed out - server took too long to respond"
     except requests.exceptions.ConnectionError:
@@ -160,7 +153,16 @@ def process_weather_data(data):
         "current_date": current_time_local.strftime('%Y-%m-%d')
     }
 
-# Display weather information in the GUI
+
+
+
+
+
+
+
+
+ # Display weather information in the GUI
+
 def display_weather(weather_info, city_name, state_code, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
@@ -231,6 +233,7 @@ def display_weather(weather_info, city_name, state_code, country_code):
     result_box.insert(tk.END, "Current Time (24hrs format): ", "bold")
     result_box.insert(tk.END, f"{weather_info['current_time']} ({weather_info['current_date']})\n")
     result_box.insert(tk.END, "\n------------------------------------------------------------------------------\n")
+
 
 # Fetch and display weather for all locations
 def get_weather():
@@ -400,7 +403,7 @@ def create_weather_image(template_type="post"):
             )
 
             # City name
-            city_text = f"{weather['city'].title()}, {weather['state'].upper()}, {weather['country'].upper()}"
+            city_text = f"{weather['city'].title()}, {weather['state']}, {weather['country'].upper()}"
             city_pos = TEMPLATES[template_type]["city_position"][i]
             draw.text(
                 city_pos,  # Slightly above temp position
