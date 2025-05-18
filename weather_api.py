@@ -490,10 +490,10 @@ def create_weather_image(template_type="post"):
         messagebox.showerror("Export Error", f"Failed to create image: {str(e)}")
 
 # Initialize the GUI with enhanced styling
-def init_gui():
+def init_gui(existing_root):
     global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references
     
-    root = Window(themename="pulse")
+    root = existing_root
     root.title("Weather Forecast Automator")
     
     # Set window size and center it
@@ -729,7 +729,7 @@ def main():
         root.geometry("675x675")  # Your existing size
         
         # Initialize your existing GUI exactly as before
-        init_gui()
+        init_gui(root)
         
         # Optional: Print login confirmation
         print(f"User logged in: {user_data.get('name', 'User')}")
