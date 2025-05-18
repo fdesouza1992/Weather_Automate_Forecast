@@ -496,8 +496,8 @@ def init_gui():
     root.title("Weather Forecast Automator")
     
     # Set window size and center it
-    window_width = 650
-    window_height = 650
+    window_width = 675
+    window_height = 675
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
@@ -525,11 +525,11 @@ def init_gui():
     try:
         logo_path = "Images/FelipeWeatherAppLogo.png"
         if os.path.exists(logo_path):
-            img = Image.open(logo_path).resize((150, 150), Image.LANCZOS)
+            img = Image.open(logo_path).resize((175, 175), Image.LANCZOS)
             photo = ImageTk.PhotoImage(img)
             image_references['logo'] = photo  # Keep reference
             logo_label = ttk.Label(header_frame, image=photo)
-            logo_label.pack(side=tk.LEFT, pady=10, padx=10)
+            logo_label.pack(side=tk.LEFT, pady=15, padx=15)
     except Exception as e:
         print(f"Could not load logo image: {e}")
 
@@ -542,8 +542,9 @@ def init_gui():
     description_label = ttk.Label(
         header_frame,
         text="Forecast up to 5 locations and export weather posts instantly.\n\n"+
-        "Enter city, state/region, and ISO country code (e.g., Boston, MA, US), \n"+
-        "then click 'Get Weather' to retrieve the latest data.\n\n"+
+        "Enter city and ISO country code (e.g., Florence, IT).\n\n"+
+        "US ONLY: State name must be included (e.g., Canton, Ohio, US).\n"+
+        "Then click 'Get Weather' to retrieve the latest data.\n\n"+
         "Note: Country codes must follow the ISO format (e.g., US, BR, IT).",
         font=("Helvetica", 14))
     description_label.pack(side=tk.TOP)
