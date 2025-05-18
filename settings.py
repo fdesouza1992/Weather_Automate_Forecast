@@ -51,8 +51,8 @@ TEMPLATES = {
     "post": {
         "font_sizes": {
             "title": 65,
-            "large": 40,
-            "medium": 30
+            "large": 35,
+            "medium": 25
         },
         "title_position": (115, 45),
         "date_position": (115, 145),
@@ -87,11 +87,11 @@ TEMPLATES = {
         "title_position": (100, 165),
         "date_position": (100, 330),
         "city_position": [
-            (115, 610),
-            (115, 795),
-            (115, 990),
-            (115, 1165),
-            (115, 1365)
+            (65, 610),
+            (65, 795),
+            (65, 990),
+            (65, 1165),
+            (65, 1365)
         ],
         "temp_position": [
             (635, 610),

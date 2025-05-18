@@ -13,3 +13,9 @@ __pycache__/
 
 # Ignore environment variables file
 .env
+
+# Ignore Firebase configuration
+firebase/*.json
+
+# Ignore upload_country_codes.json script
+upload_country_codes.json

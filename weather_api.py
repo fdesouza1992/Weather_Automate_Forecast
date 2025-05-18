@@ -1,8 +1,7 @@
-# Description: An enhanced weather app that fetches and exports weather data
 import requests
 import json
 import tkinter as tk
-from tkinter import messagebox, filedialog, ttk
+from tkinter import messagebox, filedialog
 from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
@@ -15,6 +14,10 @@ from settings import (
 )
 from io import BytesIO
 import urllib.request
+from ttkbootstrap import Window, Style
+from ttkbootstrap.constants import *
+from tkinter import ttk
+from firebase_config import db
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -29,6 +32,9 @@ preview_label = None
 header_frame = None
 description_label = None
 button_frame = None
+
+# Image references to prevent garbage collection
+image_references = {}
 
 # Loads environment variables and verifies required template images exist
 def configure():
@@ -48,38 +54,39 @@ def configure():
     return True
 
 # Fetch weather data from OpenWeatherMap API with robust error handling
-def fetch_weather_data(city_name, state_code, country_code):
+def fetch_weather_data(city_name, state_name, country_code):
     api_key = os.getenv("API_KEY")
     if not api_key:
         messagebox.showerror("API Error", "OpenWeatherMap API key not configured")
         return None
     
-    base_url = "http://api.openweathermap.org/data/2.5/weather?"
-    query = f"{city_name},{state_code},{country_code}"
-    complete_url = f"{base_url}appid={api_key}&q={query}&units=metric"
-    
+    # Step 1: Get coordinates for the city using the Direct Geocoding API
+    geocode_url= f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&limit=5&appid={api_key}"
+
     try:
-        response = requests.get(complete_url, timeout=15)
+        # Get location coordinates
+        geo_response = requests.get(geocode_url, timeout=15)
+        if geo_response.status_code != 200:
+            return None, f"Geocoding API error (Code: {geo_response.status_code})"
         
-        if response.status_code == 401:
-            return None, "Invalid API key - please check your configuration"
-        elif response.status_code == 404:
-            return None, f"We couldn't find: {city_name}, {state_code}"
-        elif response.status_code == 429:
-            return None, "API rate limit exceeded - try again later"
-        elif response.status_code != 200:
-            return None, f"API error (Code: {response.status_code})"
+        geo_data = geo_response.json()
+        if not geo_data:
+            return None, f"Geocoding API returned no results for {city_name}, {state_name}, {country_code}"
         
-        data = response.json()
+        # Extract latitude and longitude
+        lat = geo_data[0]['lat']
+        lon = geo_data[0]['lon']
+
+    # Step 2: Use the coordinates to get weather data
+        weather_url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=minutely&units=metric&appid={api_key}"
+        weather_response = requests.get(weather_url, timeout=15)
+
+        if weather_response.status_code != 200:
+            return None, f"Weather API error (Code: {weather_response.status_code})"
         
-        if not data or 'cod' not in data:
-            return None, "Invalid API response format"
-            
-        if data['cod'] != 200:
-            return None, data.get('message', 'Unknown API error')
-            
-        return data, None
-        
+        weather_data = weather_response.json()
+        return weather_data, None
+    
     except requests.exceptions.Timeout:
         return None, "Request timed out - server took too long to respond"
     except requests.exceptions.ConnectionError:
@@ -91,50 +98,80 @@ def fetch_weather_data(city_name, state_code, country_code):
 
 # Process the raw API data into a more usable format
 def process_weather_data(data):
-    if data.get("cod") != 200:
+    if not data:
         return None
-        
-    main = data["main"]
-    weather = data["weather"][0]
-    wind = data.get("wind", {})
-    sys = data.get("sys", {})
-    tz_offset = data.get("timezone", 0)  # in seconds
-    
-    # Convert timestamps to local time
-    sunrise_utc = datetime.fromtimestamp(sys["sunrise"], timezone.utc)
-    sunset_utc = datetime.fromtimestamp(sys["sunset"], timezone.utc)
-    
-    # Apply timezone offset
-    sunrise_local = sunrise_utc + timedelta(seconds=tz_offset)
-    sunset_local = sunset_utc + timedelta(seconds=tz_offset)
 
-    #Current time calculation
-    current_time_utc = datetime.now(timezone.utc)
-    current_time_local = current_time_utc + timedelta(seconds=tz_offset)
+    current = data.get("current", {})
+    daily = data.get("daily", [{}])[0]  # Get today's weather
+    tz_offset = data.get("timezone_offset", 0)  # in seconds
+
+    def timestamp_to_local(ts):
+        utc_time = datetime.fromtimestamp(ts, timezone.utc)
+        return utc_time + timedelta(seconds=tz_offset)
+
+    # Convert timestamps to local time
+    sunrise_local = timestamp_to_local(current.get("sunrise", 0))
+    sunset_local = timestamp_to_local(current.get("sunset", 0))
+
+    # Current time calculation
+    current_time_local = datetime.now(timezone.utc) + timedelta(seconds=tz_offset)
+
+    # Temperature data (using daily forecast for min/max)
+    temp = current.get("temp", 0)
+    feels_like = current.get("feels_like", 0)
+    temp_min = daily.get("temp", {}).get("min", temp)
+    temp_max = daily.get("temp", {}).get("max", temp)
+    humidity = current.get("humidity", 0)
+    pressure = current.get("pressure", 0)
+    dew_point = current.get("dew_point", 0)
+    uv_index = current.get("uvi", 0)
+    clouds = current.get("clouds", 0)
+    sea_level = current.get("sea_level", 0)
+    visibility = current.get("visibility", 0)
+
+    # Weather conditions
+    weather = current.get("weather", [{}])[0]  
+    condition = weather.get("main", "")
+    description = weather.get("description", "").capitalize()
+    icon = weather.get("icon", "")
+
+    # Wind data
+    wind_speed = current.get("wind_speed", 0)
+    wind_deg = current.get("wind_deg", 0)
+    wind_gust = current.get("wind_gust", 0)
+
+    timezone_name = data.get("timezone", "")
+
 
     return {
         #Temperature Data
-        "temp_celsius": round(main["temp"], 1),
-        "temp_fahrenheit": round(main["temp"] * 9/5 + 32, 1),
-        "feels_like_celsius": round(main["feels_like"], 1),
-        "feels_like_fahrenheit": round(main["feels_like"] * 9/5 + 32, 1),
-        "temp_min_celsius": round(main["temp_min"], 1),
-        "temp_min_fahrenheit": round(main["temp_min"] * 9/5 + 32, 1),
-        "temp_max_celsius": round(main["temp_max"], 1),
-        "temp_max_fahrenheit": round(main["temp_max"] * 9/5 + 32, 1),
+        "temp_celsius": round(temp, 1),
+        "temp_fahrenheit": round(temp * 9/5 + 32, 1),
+        "feels_like_celsius": round(feels_like, 1),
+        "feels_like_fahrenheit": round(feels_like * 9/5 + 32, 1),
+        "temp_min_celsius": round(temp_min, 1),
+        "temp_min_fahrenheit": round(temp_min * 9/5 + 32, 1),
+        "temp_max_celsius": round(temp_max, 1),
+        "temp_max_fahrenheit": round(temp_max * 9/5 + 32, 1),
 
         #Atmospheric Data
-        "pressure": main["pressure"],
-        "humidity": main["humidity"],
-        "sea_level": main.get("sea_level", 0),
+        "pressure": pressure,
+        "humidity": humidity,
+        "dew_point": dew_point,
+        "uv_index": round(uv_index,1),
+        "clouds": clouds,
+        "visibility": visibility,
+        "sea_level": sea_level,
 
         #Weather Conditions
-        "condition": weather["main"],
-        "description": weather["description"].capitalize(),
-        "icon": weather["icon"],
+        "condition": condition,
+        "description": description,
+        "icon": icon,
 
         #Wind Data
-        "wind_speed": round(wind.get("speed", 0), 1),
+        "wind_speed": round(wind_speed, 1),
+        "wind_deg": wind_deg,
+        "wind_gust": round(wind_gust, 1),
 
         #Sunrise/Sunset Data
         "sunrise": sunrise_local.strftime('%H:%M:%S'),
@@ -142,19 +179,20 @@ def process_weather_data(data):
 
         #Location Data
         "timezone": tz_offset,
+        "timezone_name": timezone_name,
         "current_time": current_time_local.strftime('%H:%M:%S'),
         "current_date": current_time_local.strftime('%Y-%m-%d')
     }
 
 # Display weather information in the GUI
-def display_weather(weather_info, city_name, state_code, country_code):
+def display_weather(weather_info, city_name, state_name, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
         return
         
-    formatted_city = f"{city_name.title()}, {state_code.upper()}, {country_code.upper()}"
+    formatted_city = f"{city_name.title()}, {state_name.upper()}, {country_code.upper()}"
     
-    result_box.insert(tk.END, f"\nWeather for {formatted_city}:\n\n", "heading")
+    result_box.insert(tk.END, f"Weather for {formatted_city}:\n", "heading")
     icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
 
     try:
@@ -172,11 +210,9 @@ def display_weather(weather_info, city_name, state_code, country_code):
         photo = ImageTk.PhotoImage(im)
         
         # Create a label to display the image
-        icon_label = tk.Label(
+        icon_label = ttk.Label(
             result_box, 
-            image=photo, 
-            bg='white', 
-            bd=0)
+            image=photo)
         icon_label.image = photo  # Keep a reference!
         
         # Insert the image into the text widget
@@ -195,16 +231,22 @@ def display_weather(weather_info, city_name, state_code, country_code):
     result_box.insert(tk.END, f"{weather_info['temp_min_celsius']}°C / {weather_info['temp_max_celsius']}°C\n")
     result_box.insert(tk.END, "Min/Max (in °F): ", "bold")
     result_box.insert(tk.END, f"{weather_info['temp_min_fahrenheit']}°F / {weather_info['temp_max_fahrenheit']}°F\n")
+    result_box.insert(tk.END, "UV Index: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['uv_index']}\n")
     result_box.insert(tk.END, "Description: ", "bold")
     result_box.insert(tk.END, f"{weather_info['description']}\n")
     result_box.insert(tk.END, "Wind Speed: ", "bold")
     result_box.insert(tk.END, f"{weather_info['wind_speed']} m/s\n")
+    result_box.insert(tk.END, "Wind Gust: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['wind_gust']} m/s\n")
     result_box.insert(tk.END, "Sea Level: ", "bold")
     result_box.insert(tk.END, f"{weather_info['sea_level']} hPa\n")
     result_box.insert(tk.END, "Pressure: ", "bold")
     result_box.insert(tk.END, f"{weather_info['pressure']} hPa\n")
     result_box.insert(tk.END, "Humidity: ", "bold")
     result_box.insert(tk.END, f"{weather_info['humidity']}%\n")
+    result_box.insert(tk.END, "Dew Point: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['dew_point']}°C\n")
     result_box.insert(tk.END, "Sunrise: ", "bold")
     result_box.insert(tk.END, f"{weather_info['sunrise']}\n")
     result_box.insert(tk.END, "Sunset: ", "bold")
@@ -214,11 +256,13 @@ def display_weather(weather_info, city_name, state_code, country_code):
     tz_sign = '-' if tz_hours < 0 else '+'
     tz_display = f"UTC/GMT {tz_sign}{abs(tz_hours)} hours"
 
-    result_box.insert(tk.END, "Timezone: ", "bold")
+    result_box.insert(tk.END, "Timezone Name: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['timezone_name']}\n")
+    result_box.insert(tk.END, "Timezone Offset: ", "bold")
     result_box.insert(tk.END, f"{tz_display}\n")
     result_box.insert(tk.END, "Current Time (24hrs format): ", "bold")
     result_box.insert(tk.END, f"{weather_info['current_time']} ({weather_info['current_date']})\n")
-    result_box.insert(tk.END, "\n----------------------------------------\n")
+    result_box.insert(tk.END, "\n------------------------------------------------------------------------------\n\n")
 
 # Fetch and display weather for all locations
 def get_weather():
@@ -235,10 +279,15 @@ def get_weather():
     for city_entry, state_entry, country_entry in location_entries:
         city = city_entry.get().strip()
         state = state_entry.get().strip()
-        country = country_entry.get().strip().upper() or "US"  # Default to US if empty
-        
-        if not city or not state:
-            messagebox.showerror("Error", "Please fill all city/state fields")
+
+        # Handle Combobox and Entry compatibility
+        if isinstance(country_entry, ttk.Combobox):
+            country = country_entry.get().strip().upper()
+        else:
+            country = country_entry.get().strip().upper()
+
+        if not city or not state or not country:
+            messagebox.showerror("Error", "Please fill all city/state/country fields")
             return
             
         weather_data, error_msg = fetch_weather_data(city, state, country)
@@ -266,7 +315,7 @@ def get_weather():
         for weather in current_weather_data:
             display_weather(weather, weather['city'], weather['state'], weather['country'])
         export_button_frame.pack(pady=10)
-        root.geometry("650x650")
+        root.geometry("675x675")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -277,19 +326,16 @@ def add_location_input(parent_frame=None):
         return
         
     frame = parent_frame if parent_frame else location_frame
-    row_frame = tk.Frame(frame, bg="#f0f8ff")
+    row_frame = ttk.Frame(frame)
     row_frame.pack(pady=5)
     
     # City input
-    tk.Label(
+    ttk.Label(
         row_frame, 
         text="City:", 
-        bg="#f0f8ff",
-        fg = TEXT_COLOR_DARK,
-        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=0, sticky="w")
 
-    city_entry = tk.Entry(
+    city_entry = ttk.Entry(
         row_frame,
         font=("Helvetica", 14), 
         width=18)
@@ -297,35 +343,42 @@ def add_location_input(parent_frame=None):
     city_entry.grid(row=1, column=0, padx=5)
     
     # State input
-    tk.Label(
+    ttk.Label(
         row_frame, 
         text="State/Region:", 
-        bg="#f0f8ff", 
-        fg = TEXT_COLOR_DARK,
-        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=1, sticky="w")
     
-    state_entry = tk.Entry(
+    state_entry = ttk.Entry(
         row_frame,
         font=("Helvetica", 14), 
-        width=8)
+        width=18)
     
     state_entry.grid(row=1, column=1, padx=10)
 
     # Country Input
-    tk.Label(
+    ttk.Label(
         row_frame, 
         text="Country Code:", 
-        bg="#f0f8ff", 
-        fg = TEXT_COLOR_DARK,
-        justify="center",
         font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
     
-    country_entry = tk.Entry(
+    country_entry = ttk.Combobox(
         row_frame,
         font=("Helvetica", 14), 
-        width=8)
-    country_entry.insert(0, "US")                   # Default to US
+        width=8,
+        values=list(fetch_country_codes().keys()),
+        state="readonly")
+    
+    country_entry.set("US")  # Default to US
+    country_entry.bind("<<ComboboxSelected>>", lambda e: country_entry.set(country_entry.get().upper()))
+
+    # Uncomment the following lines if you want to use a regular entry instead of a combobox
+    # country_entry = ttk.Entry(
+    #     row_frame,
+    #     font=("Helvetica", 14), 
+    #     width=8)
+    
+    #country_entry.insert(0, "US")                   # Default to US
+
     country_entry.grid(row=1, column=2, padx=10)
     
    # Store references for clearing later
@@ -352,7 +405,6 @@ def create_weather_image(template_type="post"):
             font_large = ImageFont.load_default()
             font_medium = ImageFont.load_default()
             font_title = ImageFont.load_default()
-        
         # Add date
         today = date.today().strftime("%A - %B %d, %Y")
         draw.text(
@@ -362,10 +414,15 @@ def create_weather_image(template_type="post"):
             font=font_medium
         )
         
+        country_codes = fetch_country_codes()
+
         # Add weather for each location
         for i, weather in enumerate(current_weather_data):
             if i >= len(TEMPLATES[template_type]["city_position"]):
                 break
+
+            #Get the country name from the dictionary
+            country_code = weather['country'].upper()
 
             # App Title
             title_text = "Weather Forecast Generator"
@@ -379,7 +436,7 @@ def create_weather_image(template_type="post"):
             )
 
             # City name
-            city_text = f"{weather['city'].title()}, {weather['state'].upper()}, {weather['country'].upper()}"
+            city_text = f"{weather['city'].title()}, {country_code}"
             city_pos = TEMPLATES[template_type]["city_position"][i]
             draw.text(
                 city_pos,  # Slightly above temp position
@@ -412,7 +469,7 @@ def create_weather_image(template_type="post"):
         # Save the image
         save_dir = filedialog.askdirectory(title="Select Save Location")
         if save_dir:
-            filename = f"weather_{template_type}_{date.today().strftime('%Y%m%d_%H%M%S')}.png"
+            filename = f"Weather_{template_type}_{today}.png"
             save_path = os.path.join(save_dir, filename)
             image.save(save_path)
             
@@ -427,16 +484,11 @@ def create_weather_image(template_type="post"):
 
 # Initialize the GUI with enhanced styling
 def init_gui():
-    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame
+    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references
     
-    root = tk.Tk()
+    root = Window(themename="pulse")
     root.title("Weather Forecast Automator")
-    root.configure(bg="#f0f8ff")  
     
-    # Set icon
-    root_icon = tk.PhotoImage(file="Images/FelipeWeatherAppLogo.png")
-    root.iconphoto(False, root_icon)
-
     # Set window size and center it
     window_width = 650
     window_height = 650
@@ -445,103 +497,95 @@ def init_gui():
     x = (screen_width // 2) - (window_width // 2)
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    root.resizable(False, False)
+    root.resizable(False, False) 
     
-    # Main container with padding
-    main_frame = tk.Frame(root, bg="#f0f8ff", padx=20, pady=20)
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    # Load and set window icon
+    try:
+        icon_path = "Images/FelipeWeatherAppLogo.png"
+        if os.path.exists(icon_path):
+            img = Image.open(icon_path)
+            img = img.resize((32, 32), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            image_references['icon'] = photo  # Keep reference
+            root.iconphoto(True, photo)
+    except Exception as e:
+        print(f"Could not load window icon: {e}")
     
-    #Logo
-    logo_img = Image.open("Images/FelipeWeatherAppLogo.png")
-    logo_img = logo_img.resize((150, 150), Image.LANCZOS)  
-    logo_photo = ImageTk.PhotoImage(logo_img)
-
     # App Header
-    header_frame = tk.Frame(
-        main_frame, 
-        bg="#f0f8ff")
-    header_frame.pack(fill=tk.X, pady=(0, 20))
+    header_frame = ttk.Frame(main_frame)
+    header_frame.pack(fill=tk.X, pady=(10, 20))
 
-    logo_label = tk.Label(
-        header_frame,
-        image=logo_photo,
-        bg="#f0f8ff"
-    )
-    logo_label.image = logo_photo  # Keep a reference
-    logo_label.pack(side=tk.LEFT, pady=10)
+    # Load logo image
+    try:
+        logo_path = "Images/FelipeWeatherAppLogo.png"
+        if os.path.exists(logo_path):
+            img = Image.open(logo_path).resize((150, 150), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            image_references['logo'] = photo  # Keep reference
+            logo_label = ttk.Label(header_frame, image=photo)
+            logo_label.pack(side=tk.LEFT, pady=10, padx=10)
+    except Exception as e:
+        print(f"Could not load logo image: {e}")
 
-    title_label = tk.Label(
+    ttk.Label(
         header_frame,
         text="Weather Forecast Post Generator",
-        font=("Helvetica", 28, "bold"),
-        bg="#f0f8ff",
-        fg="#2c3e50"
+        font=("Helvetica", 28, "bold")
     ).pack(side=tk.TOP, pady=10)
     
-    description_label = tk.Label(
+    description_label = ttk.Label(
         header_frame,
         text="Forecast up to 5 locations and export weather posts instantly.\n\n"+
         "Enter city, state/region, and ISO country code (e.g., Boston, MA, US), \n"+
         "then click 'Get Weather' to retrieve the latest data.\n\n"+
         "Note: Country codes must follow the ISO format (e.g., US, BR, IT).",
-        font=("Helvetica", 14),
-        bg="#f0f8ff",
-        fg="#7f8c8d"
-    )
+        font=("Helvetica", 14))
     description_label.pack(side=tk.TOP)
     
     # Location input frame
-    location_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    location_frame = ttk.Frame(main_frame)
     location_frame.pack(fill=tk.X)
     
     # Add initial location input
     add_location_input(location_frame)
     
     # Buttons frame
-    button_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
     
     # Add location button
-    add_button = tk.Button(
+    add_button = ttk.Button(
         button_frame,
         text="+ Add Location",
         command=lambda: add_location_input(),
-        **BUTTON_STYLE
-    )
+        bootstyle="primary")
     add_button.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(add_button)
     
     # Get weather button
-    weather_button = tk.Button(
+    weather_button = ttk.Button(
         button_frame,
         text="Get Weather",
         command=get_weather,
-        **BUTTON_STYLE
-    )
+        bootstyle="success")
     weather_button.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(weather_button)
     
     # Export buttons frame
-    export_button_frame = tk.Frame(main_frame, bg="#f0f8ff")
+    export_button_frame = ttk.Frame(main_frame)
     
     # Export buttons
-    export_post = tk.Button(
+    export_post = ttk.Button(
         export_button_frame,
         text="Export as Post",
         command=lambda: create_weather_image("post"),
-        **BUTTON_STYLE
-    )
+        bootstyle="info")
     export_post.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(export_post)
     
-    export_story = tk.Button(
+    export_story = ttk.Button(
         export_button_frame,
         text="Export as Story",
         command=lambda: create_weather_image("story"),
-        **BUTTON_STYLE
-    )
+        bootstyle="warning")
     export_story.pack(side=tk.LEFT, padx=5)
-    add_hover_effect(export_story)
     
     # Ensure export buttons are hidden initially
     export_button_frame.pack_forget()
@@ -550,20 +594,14 @@ def init_gui():
 
 # Show or hide the results and preview sections
 def toggle_results_visibility(show=True):
-    global result_frame, preview_frame, preview_canvas, preview_label, result_box
+    global result_frame, result_box
     
     if show and not hasattr(toggle_results_visibility, "results_created"):
         # Create frame if it doesn't exist
-        result_frame = tk.Frame(
-            main_frame, 
-            bg="#f0f8ff")
-        
-        result_frame.pack(
-            fill=tk.BOTH, 
-            pady=10, 
-            expand=True)
+        result_frame = ttk.Frame(main_frame)
+        result_frame.pack(fill=tk.BOTH, pady=10, padx=10, expand=True)
 
-        # Text results
+        # Text results - using tk.Text for better formatting
         result_box = tk.Text(
             result_frame,
             wrap=tk.WORD,
@@ -573,82 +611,38 @@ def toggle_results_visibility(show=True):
             relief=tk.SUNKEN,
             bg='white',
             fg=TEXT_COLOR_DARK,
-            bd=2
+            bd=2,
+            padx=10,
+            pady=10
         )
+        result_box.pack(fill=tk.BOTH, expand=True)
 
-        result_label = tk.Label(
-            result_frame,
-            text="Results Preview Window: ", 
-            font=("Helvetica", 18, "bold"),
-            bg="#f0f8ff",
-            justify="left"
-        )
-
-        result_label.pack(fill=tk.X)
-        result_label.config(fg=TEXT_COLOR_DARK)
-
-        result_box.pack(
-            fill=tk.BOTH, 
-            expand=True)
-
-        result_box.tag_configure(
-            "heading", 
-            font=("Helvetica", 18, "bold"))
-        
-        result_box.tag_configure(
-            "bold", 
-            font=("Helvetica", 14, "bold"))
-        
-        result_box.insert(
-            tk.END, 
-            "Weather Results:\n", 
-            "heading")
-        result_box.insert(
-            tk.END, 
-            "                                    \n")
+        # Configure tags for styled text
+        result_box.tag_configure("heading", font=("Helvetica", 18, "bold"))        
+        result_box.tag_configure("bold", font=("Helvetica", 14, "bold"))
         
         # Scrollbar
-        scrollbar = tk.Scrollbar(
-            result_frame, 
-            command=result_box.yview)
-        
+        scrollbar = ttk.Scrollbar(result_frame, command=result_box.yview)
         result_box.config(yscrollcommand=scrollbar.set)
-
-        scrollbar.pack(
-            side=tk.LEFT, 
-            fill=tk.Y)
-        
-        result_box.pack(
-            side=tk.LEFT, 
-            fill=tk.BOTH, 
-            expand=True)
+        scrollbar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # Back button at the bottom
-        back_button = tk.Button(
+        back_button = ttk.Button(
             result_frame,
-            text="← Back to Input",
+            text="←Back to Input",
             command=lambda: [
                 toggle_results_visibility(show=False),
                 toggle_input_visibility(show=True),
                 reset_input_view()
             ],
-            **BUTTON_STYLE
+            bootstyle="danger"
         )
-        back_button.pack(pady=10)
-        add_hover_effect(back_button)
+        back_button.pack(pady=10, padx=5)
 
         toggle_results_visibility.results_created = True
     elif not show and hasattr(toggle_results_visibility, "results_created"):
         result_frame.pack_forget()
-
-# Add hover effect to buttons
-def add_hover_effect(button, hover_color="#c8a2c8", default_color="white"):
-    def on_enter(e):
-        button.config(background=hover_color)
-    def on_leave(e):
-        button.config(background=default_color)
-    button.bind("<Enter>", on_enter)
-    button.bind("<Leave>", on_leave)
 
 # Show or hide the input elements (description, location inputs, buttons)
 def toggle_input_visibility(show=True):
@@ -658,8 +652,6 @@ def toggle_input_visibility(show=True):
         location_frame.pack(fill=tk.X)
         button_frame.pack(pady=10)
     else:
-        #header_frame.pack_forget()
-        #description_label.pack_forget()
         location_frame.pack_forget()
         button_frame.pack_forget()
 
@@ -687,7 +679,19 @@ def reset_input_view():
     add_location_input(location_frame)
     
     # Reset window size
-    root.geometry("800x700")
+    root.geometry("650x650")
+
+# Fetch country codes from Firestore and populate the country entry
+def fetch_country_codes():
+    try:
+        countries_ref = db.collection("countries")
+        countries = countries_ref.stream()
+        
+        country_codes = {doc.id: doc.to_dict()["name"] for doc in countries}
+        return country_codes
+    except Exception as e:
+        print(f"Error fetching country codes: {e}")
+        return {}
 
 # Main function to run the application
 def main():
