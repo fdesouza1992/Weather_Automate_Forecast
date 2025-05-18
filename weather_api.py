@@ -54,14 +54,14 @@ def configure():
     return True
 
 # Fetch weather data from OpenWeatherMap API with robust error handling
-def fetch_weather_data(city_name, state_code, country_code):
+def fetch_weather_data(city_name, state_name, country_code):
     api_key = os.getenv("API_KEY")
     if not api_key:
         messagebox.showerror("API Error", "OpenWeatherMap API key not configured")
         return None
     
     # Step 1: Get coordinates for the city using the Direct Geocoding API
-    geocode_url= f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_code},{country_code}&limit=5&appid={api_key}"
+    geocode_url= f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&limit=5&appid={api_key}"
 
     try:
         # Get location coordinates
@@ -71,7 +71,7 @@ def fetch_weather_data(city_name, state_code, country_code):
         
         geo_data = geo_response.json()
         if not geo_data:
-            return None, f"Geocoding API returned no results for {city_name}, {state_code}, {country_code}"
+            return None, f"Geocoding API returned no results for {city_name}, {state_name}, {country_code}"
         
         # Extract latitude and longitude
         lat = geo_data[0]['lat']
@@ -124,7 +124,7 @@ def process_weather_data(data):
     humidity = current.get("humidity", 0)
     pressure = current.get("pressure", 0)
     dew_point = current.get("dew_point", 0)
-    uvi = current.get("uvi", 0)
+    uv_index = current.get("uvi", 0)
     clouds = current.get("clouds", 0)
     sea_level = current.get("sea_level", 0)
     visibility = current.get("visibility", 0)
@@ -158,7 +158,7 @@ def process_weather_data(data):
         "pressure": pressure,
         "humidity": humidity,
         "dew_point": dew_point,
-        "uvi": uvi,
+        "uv_index": round(uv_index,1),
         "clouds": clouds,
         "visibility": visibility,
         "sea_level": sea_level,
@@ -185,14 +185,14 @@ def process_weather_data(data):
     }
 
 # Display weather information in the GUI
-def display_weather(weather_info, city_name, state_code, country_code):
+def display_weather(weather_info, city_name, state_name, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
         return
         
-    formatted_city = f"{city_name.title()}, {state_code.upper()}, {country_code.upper()}"
+    formatted_city = f"{city_name.title()}, {state_name.upper()}, {country_code.upper()}"
     
-    result_box.insert(tk.END, f"\nWeather for {formatted_city}:\n\n", "heading")
+    result_box.insert(tk.END, f"Weather for {formatted_city}:\n", "heading")
     icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
 
     try:
@@ -231,16 +231,22 @@ def display_weather(weather_info, city_name, state_code, country_code):
     result_box.insert(tk.END, f"{weather_info['temp_min_celsius']}°C / {weather_info['temp_max_celsius']}°C\n")
     result_box.insert(tk.END, "Min/Max (in °F): ", "bold")
     result_box.insert(tk.END, f"{weather_info['temp_min_fahrenheit']}°F / {weather_info['temp_max_fahrenheit']}°F\n")
+    result_box.insert(tk.END, "UV Index: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['uv_index']}\n")
     result_box.insert(tk.END, "Description: ", "bold")
     result_box.insert(tk.END, f"{weather_info['description']}\n")
     result_box.insert(tk.END, "Wind Speed: ", "bold")
     result_box.insert(tk.END, f"{weather_info['wind_speed']} m/s\n")
+    result_box.insert(tk.END, "Wind Gust: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['wind_gust']} m/s\n")
     result_box.insert(tk.END, "Sea Level: ", "bold")
     result_box.insert(tk.END, f"{weather_info['sea_level']} hPa\n")
     result_box.insert(tk.END, "Pressure: ", "bold")
     result_box.insert(tk.END, f"{weather_info['pressure']} hPa\n")
     result_box.insert(tk.END, "Humidity: ", "bold")
     result_box.insert(tk.END, f"{weather_info['humidity']}%\n")
+    result_box.insert(tk.END, "Dew Point: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['dew_point']}°C\n")
     result_box.insert(tk.END, "Sunrise: ", "bold")
     result_box.insert(tk.END, f"{weather_info['sunrise']}\n")
     result_box.insert(tk.END, "Sunset: ", "bold")
@@ -250,11 +256,13 @@ def display_weather(weather_info, city_name, state_code, country_code):
     tz_sign = '-' if tz_hours < 0 else '+'
     tz_display = f"UTC/GMT {tz_sign}{abs(tz_hours)} hours"
 
-    result_box.insert(tk.END, "Timezone: ", "bold")
+    result_box.insert(tk.END, "Timezone Name: ", "bold")
+    result_box.insert(tk.END, f"{weather_info['timezone_name']}\n")
+    result_box.insert(tk.END, "Timezone Offset: ", "bold")
     result_box.insert(tk.END, f"{tz_display}\n")
     result_box.insert(tk.END, "Current Time (24hrs format): ", "bold")
     result_box.insert(tk.END, f"{weather_info['current_time']} ({weather_info['current_date']})\n")
-    result_box.insert(tk.END, "\n------------------------------------------------------------------------------\n")
+    result_box.insert(tk.END, "\n------------------------------------------------------------------------------\n\n")
 
 # Fetch and display weather for all locations
 def get_weather():
