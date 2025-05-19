@@ -34,7 +34,7 @@ header_frame = None
 description_label = None
 button_frame = None
 logout_button = None
-description_frame = None
+description_label_frame = None
 
 # Image references to prevent garbage collection
 image_references = {}
@@ -341,12 +341,14 @@ def add_location_input(parent_frame=None):
     # City input
     ttk.Label(
         row_frame, 
-        text="City:", 
+        text="City:",
+        bootstyle="info", 
         font=("Helvetica", 14)).grid(row=0, column=0, sticky="w")
 
     city_entry = ttk.Entry(
         row_frame,
-        font=("Helvetica", 14), 
+        font=("Helvetica", 14),
+        bootstyle="info", 
         width=18)
     
     city_entry.grid(row=1, column=0, padx=5)
@@ -354,12 +356,14 @@ def add_location_input(parent_frame=None):
     # State input
     ttk.Label(
         row_frame, 
-        text="State/Region:", 
+        text="State/Region:",
+        bootstyle="info", 
         font=("Helvetica", 14)).grid(row=0, column=1, sticky="w")
     
     state_entry = ttk.Entry(
         row_frame,
-        font=("Helvetica", 14), 
+        font=("Helvetica", 14),
+        bootstyle="info", 
         width=18)
     
     state_entry.grid(row=1, column=1, padx=10)
@@ -367,26 +371,20 @@ def add_location_input(parent_frame=None):
     # Country Input
     ttk.Label(
         row_frame, 
-        text="Country Code:", 
+        text="Country Code:",
+        bootstyle="info", 
         font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
     
     country_entry = ttk.Combobox(
         row_frame,
         font=("Helvetica", 14), 
         width=8,
+        bootstyle="info",
         values=list(fetch_country_codes().keys()),
         state="readonly")
     
     country_entry.set("US")  # Default to US
     country_entry.bind("<<ComboboxSelected>>", lambda e: country_entry.set(country_entry.get().upper()))
-
-    # Uncomment the following lines if you want to use a regular entry instead of a combobox
-    # country_entry = ttk.Entry(
-    #     row_frame,
-    #     font=("Helvetica", 14), 
-    #     width=8)
-    
-    #country_entry.insert(0, "US")                   # Default to US
 
     country_entry.grid(row=1, column=2, padx=10)
     
@@ -521,7 +519,7 @@ def init_gui(existing_root):
         print(f"Could not load window icon: {e}")
     
     # App Header
-    header_frame = ttk.Frame(main_frame)
+    header_frame = ttk.Frame(main_frame, bootstyle="primary")
     header_frame.pack(fill=tk.X, pady=(10, 20))
 
     # Load logo image
@@ -541,19 +539,23 @@ def init_gui(existing_root):
         header_frame,
         text="Weather Forecast Post Generator",
         font=("Helvetica", 28, "bold"),
-        bootstyle="primary"
+        bootstyle="inverse-primary"
     ).pack(side=tk.TOP)
 
+    # Description Frame
+    description_frame = ttk.Frame(main_frame)
+    description_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=(0, 10))
+
     # Description label frame with wrapped text
-    description_frame = ttk.Labelframe(
-        header_frame,
+    description_label_frame = ttk.Labelframe(
+        description_frame,
         text="Instructions",  # This is the frame's title
-        bootstyle="info"
+        bootstyle="primary"
     )
 
     # Create a label inside the frame for the wrapped text
     description_label = ttk.Label(
-        description_frame,
+        description_label_frame,
         text=(
             "Easily generate and share weather forecasts for up to five locations at once. "
             "Simply enter a city name along with its ISO country code (e.g., Florence, IT).\n\n"
@@ -562,14 +564,15 @@ def init_gui(existing_root):
             "Tip: Use official two-letter ISO country codes for accurate results (e.g., US, BR, IT)"),
         wraplength=575,  # Adjust this based on your window size
         justify="left",
-        font=("Helvetica", 13)  
+        font=("Helvetica", 13),
+        bootstyle="primary"  
     )
 
     # Pack the label inside the frame with padding
     description_label.pack(padx=10, pady=10)
 
     # Pack the frame in the header
-    description_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+    description_label_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
     # Location input frame
     location_frame = ttk.Frame(main_frame)
