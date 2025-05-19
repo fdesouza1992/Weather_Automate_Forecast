@@ -21,7 +21,7 @@ class LoginScreen:
         try:
             img = Image.open("Images/FelipeWeatherAppLogo.png").resize((150, 150))
             self.logo = ImageTk.PhotoImage(img)
-            ttk.Label(self.main_frame, image=self.logo).pack(pady=10)
+            ttk.Label(self.main_frame, image=self.logo).pack(side=tk.TOP, pady=10)
         except Exception as e:
             print(f"Error loading logo: {e}")
         
@@ -29,8 +29,12 @@ class LoginScreen:
         ttk.Label(
             self.main_frame, 
             text="Weather Forecast Generator",
-            font=("Helvetica", 20, "bold")
-        ).pack(pady=10)
+            font=("Helvetica", 28, "bold"),
+            bootstyle="primary"
+        ).pack(side=tk.TOP, pady=5)
+        
+        # Separator
+        ttk.Separator(self.main_frame).pack(fill=tk.X, pady=10)
         
         # Notebook for Login/Register tabs
         self.notebook = ttk.Notebook(self.main_frame)

@@ -33,6 +33,8 @@ preview_label = None
 header_frame = None
 description_label = None
 button_frame = None
+logout_button = None
+description_frame = None
 
 # Image references to prevent garbage collection
 image_references = {}
@@ -322,7 +324,7 @@ def get_weather():
         for weather in current_weather_data:
             display_weather(weather, weather['city'], weather['state'], weather['country'])
         export_button_frame.pack(pady=10)
-        root.geometry("675x675")
+        root.geometry("675x775")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -491,14 +493,14 @@ def create_weather_image(template_type="post"):
 
 # Initialize the GUI with enhanced styling
 def init_gui(existing_root):
-    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references
+    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references, logout_button
     
     root = existing_root
     root.title("Weather Forecast Automator")
     
     # Set window size and center it
     window_width = 675
-    window_height = 675
+    window_height = 775
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
@@ -526,34 +528,53 @@ def init_gui(existing_root):
     try:
         logo_path = "Images/FelipeWeatherAppLogo.png"
         if os.path.exists(logo_path):
-            img = Image.open(logo_path).resize((175, 175), Image.LANCZOS)
+            img = Image.open(logo_path).resize((150, 150), Image.LANCZOS)
             photo = ImageTk.PhotoImage(img)
             image_references['logo'] = photo  # Keep reference
             logo_label = ttk.Label(header_frame, image=photo)
-            logo_label.pack(side=tk.LEFT, pady=15, padx=15)
+            logo_label.pack(side=tk.TOP, pady=10)
     except Exception as e:
         print(f"Could not load logo image: {e}")
 
+    # Title label
     ttk.Label(
         header_frame,
         text="Weather Forecast Post Generator",
-        font=("Helvetica", 28, "bold")
-    ).pack(side=tk.TOP, pady=10)
-    
-    description_label = ttk.Label(
+        font=("Helvetica", 28, "bold"),
+        bootstyle="primary"
+    ).pack(side=tk.TOP)
+
+    # Description label frame with wrapped text
+    description_frame = ttk.Labelframe(
         header_frame,
-        text="Forecast up to 5 locations and export weather posts instantly.\n\n"+
-        "Enter city and ISO country code (e.g., Florence, IT).\n\n"+
-        "US ONLY: State name must be included (e.g., Canton, Ohio, US).\n"+
-        "Then click 'Get Weather' to retrieve the latest data.\n\n"+
-        "Note: Country codes must follow the ISO format (e.g., US, BR, IT).",
-        font=("Helvetica", 14))
-    description_label.pack(side=tk.TOP)
-    
+        text="Instructions",  # This is the frame's title
+        bootstyle="info"
+    )
+
+    # Create a label inside the frame for the wrapped text
+    description_label = ttk.Label(
+        description_frame,
+        text=(
+            "Easily generate and share weather forecasts for up to five locations at once. "
+            "Simply enter a city name along with its ISO country code (e.g., Florence, IT).\n\n"
+            "For locations within the United States, be sure to include the full state name (e.g., Canton, Ohio, US). " 
+            "Once you're ready, click 'Get Weather' to retrieve the latest forecast details.\n\n" 
+            "Tip: Use official two-letter ISO country codes for accurate results (e.g., US, BR, IT)"),
+        wraplength=575,  # Adjust this based on your window size
+        justify="left",
+        font=("Helvetica", 13)  
+    )
+
+    # Pack the label inside the frame with padding
+    description_label.pack(padx=10, pady=10)
+
+    # Pack the frame in the header
+    description_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
     # Location input frame
     location_frame = ttk.Frame(main_frame)
     location_frame.pack(fill=tk.X)
-    
+
     # Add initial location input
     add_location_input(location_frame)
     
@@ -567,7 +588,7 @@ def init_gui(existing_root):
         text="+ Add Location",
         command=lambda: add_location_input(),
         bootstyle="primary")
-    add_button.pack(side=tk.LEFT, padx=5)
+    add_button.pack(side=tk.LEFT, padx=10)
     
     # Get weather button
     weather_button = ttk.Button(
@@ -575,8 +596,16 @@ def init_gui(existing_root):
         text="Get Weather",
         command=get_weather,
         bootstyle="success")
-    weather_button.pack(side=tk.LEFT, padx=5)
+    weather_button.pack(side=tk.LEFT, padx=10)
     
+    # Logout button
+    logout_button = ttk.Button(
+        button_frame,
+        text="Logout",
+        command=logout_user,
+        bootstyle="danger")
+    logout_button.pack(side=tk.LEFT, padx=10)
+
     # Export buttons frame
     export_button_frame = ttk.Frame(main_frame)
     
@@ -585,15 +614,15 @@ def init_gui(existing_root):
         export_button_frame,
         text="Export as Post",
         command=lambda: create_weather_image("post"),
-        bootstyle="info")
-    export_post.pack(side=tk.LEFT, padx=5)
+        bootstyle="primary")
+    export_post.pack(side=tk.LEFT, padx=10)
     
     export_story = ttk.Button(
         export_button_frame,
         text="Export as Story",
         command=lambda: create_weather_image("story"),
-        bootstyle="warning")
-    export_story.pack(side=tk.LEFT, padx=5)
+        bootstyle="success")
+    export_story.pack(side=tk.LEFT, padx=10)
     
     # Ensure export buttons are hidden initially
     export_button_frame.pack_forget()
@@ -630,7 +659,7 @@ def toggle_results_visibility(show=True):
         result_box.tag_configure("bold", font=("Helvetica", 14, "bold"))
         
         # Scrollbar
-        scrollbar = ttk.Scrollbar(result_frame, command=result_box.yview)
+        scrollbar = ttk.Scrollbar(result_frame, command=result_box.yview,bootstyle="primary-round")
         result_box.config(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -644,9 +673,17 @@ def toggle_results_visibility(show=True):
                 toggle_input_visibility(show=True),
                 reset_input_view()
             ],
-            bootstyle="danger"
+            bootstyle="warning"
         )
-        back_button.pack(pady=10, padx=5)
+        back_button.pack(pady=5, padx=5)
+
+        # Logout button
+        logout_button = ttk.Button(
+            result_frame,
+            text="Logout",
+            command=logout_user,
+            bootstyle="danger")
+        logout_button.pack(pady=5, padx=5)
 
         toggle_results_visibility.results_created = True
     elif not show and hasattr(toggle_results_visibility, "results_created"):
@@ -654,14 +691,19 @@ def toggle_results_visibility(show=True):
 
 # Show or hide the input elements (description, location inputs, buttons)
 def toggle_input_visibility(show=True):
+    global description_frame, header_frame, location_frame, button_frame
+    
     if show:
         header_frame.pack(fill=tk.X, pady=(0, 20))
-        description_label.pack(side=tk.TOP)
+        if description_frame:  # Only pack if it exists
+            description_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
         location_frame.pack(fill=tk.X)
         button_frame.pack(pady=10)
     else:
         location_frame.pack_forget()
         button_frame.pack_forget()
+        if description_frame:  # Only forget if it exists
+            description_frame.pack_forget()
 
 # Reset the input view to its initial state
 def reset_input_view():
@@ -687,7 +729,7 @@ def reset_input_view():
     add_location_input(location_frame)
     
     # Reset window size
-    root.geometry("650x650")
+    root.geometry("675x775")
 
 # Fetch country codes from Firestore and populate the country entry
 def fetch_country_codes():
@@ -701,8 +743,51 @@ def fetch_country_codes():
         print(f"Error fetching country codes: {e}")
         return {}
 
+# Define on_login_success at the module level
+def on_login_success(uid, user_data):
+    global root
+    
+    # Destroy login screen widgets
+    for widget in root.winfo_children():
+        widget.destroy()
+    
+    # Resize window for main app
+    root.geometry("675x775")
+    
+    # Initialize your existing GUI exactly as before
+    init_gui(root)
+    
+    # Optional: Print login confirmation
+    print(f"User logged in: {user_data.get('name', 'User')}")
+
+# Logout user and clear session data
+def logout_user():
+    global root, current_weather_data, location_entries, input_elements
+    
+    # Add confirmation dialog
+    if not messagebox.askyesno("Logout", "Are you sure you want to logout?"):
+        return
+
+    # Clear all data
+    current_weather_data = []
+    location_entries = []
+    input_elements = []
+    
+    # Destroy all widgets
+    for widget in root.winfo_children():
+        widget.destroy()
+    
+    # Reset window size for login screen
+    root.geometry("475x625")
+    
+    # Show login screen again
+    from login_screen import LoginScreen
+    LoginScreen(root, on_login_success)
+
 # Main function to run the application
 def main():
+    global root  # Make root available globally
+    
     if not configure():
         return  # Exit if configuration fails
 
@@ -711,28 +796,14 @@ def main():
     root.title("Weather Forecast Automator")
     
     # Set smaller window size for login screen
-    window_width = 500
-    window_height = 700
+    window_width = 475
+    window_height = 625
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     root.resizable(False, False)
-    
-    def on_login_success(uid, user_data):
-        # Destroy login screen widgets
-        for widget in root.winfo_children():
-            widget.destroy()
-        
-        # Resize window for main app
-        root.geometry("675x675")  # Your existing size
-        
-        # Initialize your existing GUI exactly as before
-        init_gui(root)
-        
-        # Optional: Print login confirmation
-        print(f"User logged in: {user_data.get('name', 'User')}")
     
     # Show login screen first
     LoginScreen(root, on_login_success)
