@@ -1,5 +1,12 @@
 from firebase_admin import auth
 from firebase_config import db
+from dotenv import load_dotenv
+import os
+import requests
+import json
+
+# Load environment variables
+load_dotenv()
 
 # Function to create a new user
 def create_user(email="", password="", phone_number="", display_name=""):
@@ -50,6 +57,34 @@ def delete_user(uid):
     except Exception as e:
         print(f"Error deleting user: {e}")
         return None
+
+# Verify user credentials using Firebase REST API. Returns: tuple of (uid, error_message
+def verify_password(email, password):
+    web_api_key = os.getenv("FIREBASE_WEB_API_KEY")
+    if not web_api_key:
+        return None, "Firebase Web API key not configured in .env file"
+    
+    try:
+        # Firebase REST API endpoint
+        url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={web_api_key}"
+        
+        payload = {
+            "email": email,
+            "password": password,
+            "returnSecureToken": True
+        }
+        
+        response = requests.post(url, json=payload)
+        data = response.json()
+        
+        if response.status_code == 200:
+            return data.get('localId'), None  # Return user ID
+        else:
+            error_msg = data.get('error', {}).get('message', 'Unknown error occurred')
+            return None, error_msg
+            
+    except Exception as e:
+        return None, str(e)
 
 
 # verify if the user exists

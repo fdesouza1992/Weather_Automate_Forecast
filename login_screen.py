@@ -120,25 +120,30 @@ class LoginScreen:
             return
         
         try:
-            # Verify user credentials with Firebase
-            user = auth.get_user_by_email(email)
+            from auth_controller import verify_password
+            uid, error_msg = verify_password(email, password)
             
-            # In a real app, you would verify the password here
-            # For Firebase, you'd typically use Firebase Auth SDK on client side
-            # For this example, we'll just check if the user exists
+            if error_msg:
+                # Handle specific Firebase errors
+                if "INVALID_LOGIN_CREDENTIALS" in error_msg:
+                    error_msg = "Invalid email or password"
+                elif "TOO_MANY_ATTEMPTS" in error_msg:
+                    error_msg = "Too many attempts. Try again later"
+                    
+                messagebox.showerror("Login Error", error_msg)
+                return
+                
+            # Get user data from Firestore - CORRECTED VERSION
+            user_ref = db.collection('users').document(uid)
+            user_doc = user_ref.get()
             
-            # Get additional user data from Firestore
-            user_ref = db.collection('users').document(user.uid)
-            user_data = user_ref.get().to_dict()
-            
-            if user_data:
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
                 messagebox.showinfo("Success", f"Welcome back, {user_data.get('name', 'User')}!")
-                self.on_login_success(user.uid, user_data)
+                self.on_login_success(uid, user_data)
             else:
                 messagebox.showerror("Error", "User data not found")
                 
-        except auth.UserNotFoundError:
-            messagebox.showerror("Error", "User not found. Please register.")
         except Exception as e:
             messagebox.showerror("Error", f"Login failed: {str(e)}")
     
