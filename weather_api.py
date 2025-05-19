@@ -691,19 +691,14 @@ def toggle_results_visibility(show=True):
 
 # Show or hide the input elements (description, location inputs, buttons)
 def toggle_input_visibility(show=True):
-    global description_frame, header_frame, location_frame, button_frame
-    
     if show:
         header_frame.pack(fill=tk.X, pady=(0, 20))
-        if description_frame:  # Only pack if it exists
-            description_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        description_label.pack(side=tk.TOP)
         location_frame.pack(fill=tk.X)
         button_frame.pack(pady=10)
     else:
         location_frame.pack_forget()
         button_frame.pack_forget()
-        if description_frame:  # Only forget if it exists
-            description_frame.pack_forget()
 
 # Reset the input view to its initial state
 def reset_input_view():
