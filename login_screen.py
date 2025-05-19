@@ -14,7 +14,7 @@ class LoginScreen:
         self.style = Style(theme='pulse')
         
         # Main container frame
-        self.main_frame = ttk.Frame(master, padding="20")
+        self.main_frame = ttk.Frame(master, padding="20", bootstyle="primary")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         
         # App logo
@@ -30,35 +30,35 @@ class LoginScreen:
             self.main_frame, 
             text="Weather Forecast Generator",
             font=("Helvetica", 28, "bold"),
-            bootstyle="primary"
+            bootstyle="inverse-primary"
         ).pack(side=tk.TOP, pady=5)
         
         # Separator
         ttk.Separator(self.main_frame).pack(fill=tk.X, pady=10)
-        
+
         # Notebook for Login/Register tabs
-        self.notebook = ttk.Notebook(self.main_frame)
+        self.notebook = ttk.Notebook(self.main_frame, bootstyle="primary")
         self.notebook.pack(fill=tk.BOTH, expand=True, pady=20)
         
         # Login Frame
-        self.login_frame = ttk.Frame(self.notebook, padding=10)
+        self.login_frame = ttk.Frame(self.notebook, padding=10, bootstyle="primary")
         self.notebook.add(self.login_frame, text="Login")
         self._setup_login_form()
         
         # Register Frame
-        self.register_frame = ttk.Frame(self.notebook, padding=10)
+        self.register_frame = ttk.Frame(self.notebook, padding=10, bootstyle="primary")
         self.notebook.add(self.register_frame, text="Register")
         self._setup_register_form()
     
     def _setup_login_form(self):
         # Email
-        ttk.Label(self.login_frame, text="Email:").grid(row=0, column=0, sticky="w", pady=5)
-        self.login_email = ttk.Entry(self.login_frame, width=30)
+        ttk.Label(self.login_frame, bootstyle="inverse-primary", text="Email:").grid(row=0, column=0, sticky="w", pady=5)
+        self.login_email = ttk.Entry(self.login_frame, width=30, bootstyle="primary")
         self.login_email.grid(row=0, column=1, pady=5, padx=5)
         
         # Password
-        ttk.Label(self.login_frame, text="Password:").grid(row=1, column=0, sticky="w", pady=5)
-        self.login_password = ttk.Entry(self.login_frame, width=30, show="*")
+        ttk.Label(self.login_frame, bootstyle="inverse-primary", text="Password:").grid(row=1, column=0, sticky="w", pady=5)
+        self.login_password = ttk.Entry(self.login_frame, bootstyle="primary", width=30, show="*")
         self.login_password.grid(row=1, column=1, pady=5, padx=5)
         
         # Login Button
@@ -75,28 +75,28 @@ class LoginScreen:
     
     def _setup_register_form(self):
         # Name
-        ttk.Label(self.register_frame, text="Full Name:").grid(row=0, column=0, sticky="w", pady=5)
-        self.reg_name = ttk.Entry(self.register_frame, width=30)
+        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Full Name:").grid(row=0, column=0, sticky="w", pady=5)
+        self.reg_name = ttk.Entry(self.register_frame, bootstyle="primary", width=30)
         self.reg_name.grid(row=0, column=1, pady=5, padx=5)
         
         # Email
-        ttk.Label(self.register_frame, text="Email:").grid(row=1, column=0, sticky="w", pady=5)
-        self.reg_email = ttk.Entry(self.register_frame, width=30)
+        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Email:").grid(row=1, column=0, sticky="w", pady=5)
+        self.reg_email = ttk.Entry(self.register_frame, bootstyle="primary", width=30)
         self.reg_email.grid(row=1, column=1, pady=5, padx=5)
         
         # Password
-        ttk.Label(self.register_frame, text="Password:").grid(row=2, column=0, sticky="w", pady=5)
-        self.reg_password = ttk.Entry(self.register_frame, width=30, show="*")
+        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Password:").grid(row=2, column=0, sticky="w", pady=5)
+        self.reg_password = ttk.Entry(self.register_frame, bootstyle="primary", width=30, show="*")
         self.reg_password.grid(row=2, column=1, pady=5, padx=5)
         
         # Confirm Password
-        ttk.Label(self.register_frame, text="Confirm Password:").grid(row=3, column=0, sticky="w", pady=5)
-        self.reg_confirm = ttk.Entry(self.register_frame, width=30, show="*")
+        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Confirm Password:").grid(row=3, column=0, sticky="w", pady=5)
+        self.reg_confirm = ttk.Entry(self.register_frame, bootstyle="primary", width=30, show="*")
         self.reg_confirm.grid(row=3, column=1, pady=5, padx=5)
         
         # Phone (optional)
-        ttk.Label(self.register_frame, text="Phone (optional):").grid(row=4, column=0, sticky="w", pady=5)
-        self.reg_phone = ttk.Entry(self.register_frame, width=30)
+        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Phone (optional):").grid(row=4, column=0, sticky="w", pady=5)
+        self.reg_phone = ttk.Entry(self.register_frame, bootstyle="primary", width=30)
         self.reg_phone.grid(row=4, column=1, pady=5, padx=5)
         
         # Register Button
@@ -104,7 +104,7 @@ class LoginScreen:
             self.register_frame, 
             text="Register", 
             command=self._handle_register,
-            bootstyle="primary"
+            bootstyle="success"
         )
         register_btn.grid(row=5, column=0, columnspan=2, pady=20)
         
@@ -139,7 +139,7 @@ class LoginScreen:
             
             if user_doc.exists:
                 user_data = user_doc.to_dict()
-                messagebox.showinfo("Success", f"Welcome back, {user_data.get('name', 'User')}!")
+                messagebox.showinfo("Success", f"Welcome back: \n{user_data.get('name', 'User')}!")
                 self.on_login_success(uid, user_data)
             else:
                 messagebox.showerror("Error", "User data not found")
@@ -163,8 +163,8 @@ class LoginScreen:
             messagebox.showerror("Error", "Passwords do not match")
             return
             
-        if len(password) < 6:
-            messagebox.showerror("Error", "Password must be at least 6 characters")
+        if len(password) < 8:
+            messagebox.showerror("Error", "Password must be at least 8 characters")
             return
             
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
