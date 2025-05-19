@@ -818,5 +818,5 @@ if __name__ == "__main__":
 # customizable templates for social media posts.
 
 # Created by Felipe de Souza
-# Date: 2025-05-11
-# Version: 2.1
+# Date: 2025-05-19
+# Version: 3.1
