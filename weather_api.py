@@ -1,7 +1,7 @@
 import requests
 import json
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox, filedialog, ttk
 from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
@@ -16,7 +16,6 @@ from io import BytesIO
 import urllib.request
 from ttkbootstrap import Window, Style
 from ttkbootstrap.constants import *
-from tkinter import ttk
 from firebase_config import db
 from login_screen import LoginScreen
 
@@ -324,7 +323,7 @@ def get_weather():
         for weather in current_weather_data:
             display_weather(weather, weather['city'], weather['state'], weather['country'])
         export_button_frame.pack(pady=10)
-        root.geometry("675x775")
+        root.geometry("675X800")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -388,6 +387,23 @@ def add_location_input(parent_frame=None):
 
     country_entry.grid(row=1, column=2, padx=10)
     
+    # Remove button
+    remove_button = ttk.Button(
+            row_frame,
+            text="Remove",
+            command=lambda: [
+                row_frame.destroy(),
+                location_entries.remove((city_entry, state_entry, country_entry)),
+                input_elements.remove((city_entry, state_entry, country_entry)),
+            ],
+            bootstyle="danger")
+    remove_button.grid(row=1, column=3, padx=10)        
+    
+    if len(location_entries) > 0:
+        remove_button.config(state="normal")
+    else:
+        remove_button.config(state="disabled")
+
    # Store references for clearing later
     input_elements.append((city_entry, state_entry, country_entry)) 
     location_entries.append((city_entry, state_entry, country_entry))
@@ -495,10 +511,10 @@ def init_gui(existing_root):
     
     root = existing_root
     root.title("Weather Forecast Automator")
-    
+
     # Set window size and center it
     window_width = 675
-    window_height = 775
+    window_height = 800
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
@@ -511,7 +527,7 @@ def init_gui(existing_root):
         icon_path = "Images/FelipeWeatherAppLogo.png"
         if os.path.exists(icon_path):
             img = Image.open(icon_path)
-            img = img.resize((32, 32), Image.LANCZOS)
+            img = img.resize((75, 75), Image.LANCZOS)
             photo = ImageTk.PhotoImage(img)
             image_references['icon'] = photo  # Keep reference
             root.iconphoto(True, photo)
@@ -530,17 +546,20 @@ def init_gui(existing_root):
             photo = ImageTk.PhotoImage(img)
             image_references['logo'] = photo  # Keep reference
             logo_label = ttk.Label(header_frame, image=photo)
-            logo_label.pack(side=tk.TOP, pady=10)
+            logo_label.pack(side=tk.LEFT, pady=10, padx=30)
     except Exception as e:
-        print(f"Could not load logo image: {e}")
+        print(f"Could not load logo image: {e}") 
 
     # Title label
-    ttk.Label(
+    logo_text = ttk.Label(
         header_frame,
-        text="Weather Forecast Post Generator",
-        font=("Helvetica", 28, "bold"),
-        bootstyle="inverse-primary"
-    ).pack(side=tk.TOP)
+        text="Weather Forecast Generator",
+        font=("Helvetica", 38, "bold"),
+        bootstyle="inverse-primary",
+        wraplength=455,  
+        justify="center",
+    )
+    logo_text.pack(side=tk.LEFT, pady=30, padx=50)
 
     # Description Frame
     description_frame = ttk.Frame(main_frame)
@@ -727,7 +746,7 @@ def reset_input_view():
     add_location_input(location_frame)
     
     # Reset window size
-    root.geometry("675x775")
+    root.geometry("675x800")
 
 # Fetch country codes from Firestore and populate the country entry
 def fetch_country_codes():
@@ -750,7 +769,7 @@ def on_login_success(uid, user_data):
         widget.destroy()
     
     # Resize window for main app
-    root.geometry("675x775")
+    root.geometry("675x800")
     
     # Initialize your existing GUI exactly as before
     init_gui(root)
@@ -781,6 +800,15 @@ def logout_user():
     # Show login screen again
     from login_screen import LoginScreen
     LoginScreen(root, on_login_success)
+
+# Placeholder functions for future implementation
+def view_profile():
+    pass
+
+def edit_profile():
+    pass
+
+
 
 # Main function to run the application
 def main():
