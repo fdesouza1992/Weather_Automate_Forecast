@@ -1,7 +1,7 @@
 import requests
 import json
 import tkinter as tk
-from tkinter import messagebox, filedialog, ttk
+from tkinter import StringVar, messagebox, filedialog, ttk
 from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
@@ -18,6 +18,7 @@ from ttkbootstrap import Window, Style
 from ttkbootstrap.constants import *
 from firebase_config import db
 from login_screen import LoginScreen
+import ttkbootstrap as ttkb
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -507,7 +508,7 @@ def create_weather_image(template_type="post"):
 
 # Initialize the GUI with enhanced styling
 def init_gui(existing_root):
-    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references, logout_button
+    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references, logout_button, actions_menubar
     
     root = existing_root
     root.title("Weather Forecast Automator")
@@ -521,6 +522,57 @@ def init_gui(existing_root):
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     root.resizable(False, False) 
+
+    # Create Menu Frame
+    menu_frame = ttk.Frame(main_frame, bootstyle="primary")
+    menu_frame.pack(side=tk.TOP, fill=tk.X, pady=(10, 0))
+
+    # Create Menubuttons
+    actions_menubutton = ttkb.Menubutton(menu_frame, text="Actions", bootstyle="light")
+    actions_menubutton.grid(row=0, column=0, padx=20, pady=10)
+    profile_menubutton = ttkb.Menubutton(menu_frame, text="Profile", bootstyle="light")
+    profile_menubutton.grid(row=0, column=1, padx=40, pady=10)
+    color_mode_menubutton = ttkb.Menubutton(menu_frame, text="Theme", bootstyle="light")
+    color_mode_menubutton.grid(row=0, column=2, padx=40, pady=10)
+    help_menubutton = ttkb.Menubutton(menu_frame, text="Help", bootstyle="light")
+    help_menubutton.grid(row=0, column=3, padx=20, pady=10)
+
+     # Create Menu Bar
+    actions_menubar = ttkb.Menu(root)
+    profile_menubar = ttkb.Menu(root)
+    color_mode_menubar = ttkb.Menu(root)
+    help_menubar = ttkb.Menu(root)
+    
+    # Associate the inside menu with the menubutton
+    actions_menubutton['menu'] = actions_menubar
+    profile_menubutton['menu'] = profile_menubar
+    color_mode_menubutton['menu'] = color_mode_menubar
+    help_menubutton['menu'] = help_menubar
+
+    # File menu
+    actions_menubar.add_command(label="Add Location", command=lambda: add_location_input(location_frame))
+    actions_menubar.add_command(label="Get Weather", command=get_weather)
+    actions_menubar.add_separator()
+    actions_menubar.add_command(label="Export as Post", command=lambda: create_weather_image("post"))
+    actions_menubar.add_command(label="Export as Story", command=lambda: create_weather_image("story"))
+    actions_menubar.add_separator()
+    actions_menubar.add_command(label="Reset", command=lambda: [
+        reset_input_view(),
+        toggle_results_visibility(show=False),
+        toggle_input_visibility(show=True)
+    ])
+    actions_menubar.add_separator()
+    actions_menubar.add_command(label="Exit", command=root.destroy)
+
+    # Profile Menu
+    profile_menubar.add_command(label="View Profile", command=view_profile)
+    profile_menubar.add_command(label="Edit Profile", command=edit_profile)
+    profile_menubar.add_separator()
+    profile_menubar.add_command(label="Logout", command=logout_user)
+
+    # Help menu 
+    help_menubar.add_command(label="About", command=lambda: messagebox.showinfo("About", "Weather Forecast Automator\n\nVersion 3.1\n\nCreated by Felipe de Souza"))
+
     
     # Load and set window icon
     try:
@@ -533,7 +585,7 @@ def init_gui(existing_root):
             root.iconphoto(True, photo)
     except Exception as e:
         print(f"Could not load window icon: {e}")
-    
+
     # App Header
     header_frame = ttk.Frame(main_frame, bootstyle="primary")
     header_frame.pack(fill=tk.X, pady=(10, 20))
@@ -762,7 +814,7 @@ def fetch_country_codes():
 
 # Define on_login_success at the module level
 def on_login_success(uid, user_data):
-    global root
+    global root, actions_menubar
     
     # Destroy login screen widgets
     for widget in root.winfo_children():
@@ -770,7 +822,7 @@ def on_login_success(uid, user_data):
     
     # Resize window for main app
     root.geometry("675x800")
-    
+
     # Initialize your existing GUI exactly as before
     init_gui(root)
     
@@ -808,8 +860,6 @@ def view_profile():
 def edit_profile():
     pass
 
-
-
 # Main function to run the application
 def main():
     global root  # Make root available globally
@@ -820,7 +870,7 @@ def main():
     # Create root window
     root = Window(themename="pulse")
     root.title("Weather Forecast Automator")
-    
+
     # Set smaller window size for login screen
     window_width = 475
     window_height = 625
@@ -830,10 +880,10 @@ def main():
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     root.resizable(False, False)
-    
+
     # Show login screen first
     LoginScreen(root, on_login_success)
-    
+
     root.mainloop()
 
 if __name__ == "__main__":
