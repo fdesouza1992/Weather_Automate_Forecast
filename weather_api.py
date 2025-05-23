@@ -525,17 +525,17 @@ def init_gui(existing_root):
 
     # Create Menu Frame
     menu_frame = ttk.Frame(main_frame, bootstyle="primary")
-    menu_frame.pack(side=tk.TOP, fill=tk.X, pady=(10, 0))
+    menu_frame.pack(side=tk.TOP, fill=tk.X)
 
     # Create Menubuttons
-    actions_menubutton = ttkb.Menubutton(menu_frame, text="Actions", bootstyle="light")
-    actions_menubutton.grid(row=0, column=0, padx=30, pady=10)
-    profile_menubutton = ttkb.Menubutton(menu_frame, text="Profile", bootstyle="light")
-    profile_menubutton.grid(row=0, column=1, padx=40, pady=10)
-    color_mode_menubutton = ttkb.Menubutton(menu_frame, text="Theme", bootstyle="light")
-    color_mode_menubutton.grid(row=0, column=2, padx=40, pady=10)
     help_menubutton = ttkb.Menubutton(menu_frame, text="Help", bootstyle="light")
-    help_menubutton.grid(row=0, column=3, padx=30, pady=10)
+    help_menubutton.pack(side=tk.RIGHT, pady=5)
+    color_mode_menubutton = ttkb.Menubutton(menu_frame, text="Theme", bootstyle="light")
+    color_mode_menubutton.pack(side=tk.RIGHT, pady=5)
+    profile_menubutton = ttkb.Menubutton(menu_frame, text="Profile", bootstyle="light")
+    profile_menubutton.pack(side=tk.RIGHT, pady=5)
+    actions_menubutton = ttkb.Menubutton(menu_frame, text="Actions", bootstyle="light")
+    actions_menubutton.pack(side=tk.RIGHT, pady=5)
 
      # Create Menu Bar
     actions_menubar = ttkb.Menu(root)
@@ -616,7 +616,7 @@ def init_gui(existing_root):
 
     # App Header
     header_frame = ttk.Frame(main_frame, bootstyle="primary")
-    header_frame.pack(fill=tk.X, pady=(10, 20))
+    header_frame.pack(fill=tk.X, pady=(5, 0))
 
     # Load logo image
     try:
