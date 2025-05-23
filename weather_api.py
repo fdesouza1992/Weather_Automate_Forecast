@@ -529,19 +529,21 @@ def init_gui(existing_root):
 
     # Create Menubuttons
     actions_menubutton = ttkb.Menubutton(menu_frame, text="Actions", bootstyle="light")
-    actions_menubutton.grid(row=0, column=0, padx=20, pady=10)
+    actions_menubutton.grid(row=0, column=0, padx=30, pady=10)
     profile_menubutton = ttkb.Menubutton(menu_frame, text="Profile", bootstyle="light")
     profile_menubutton.grid(row=0, column=1, padx=40, pady=10)
     color_mode_menubutton = ttkb.Menubutton(menu_frame, text="Theme", bootstyle="light")
     color_mode_menubutton.grid(row=0, column=2, padx=40, pady=10)
     help_menubutton = ttkb.Menubutton(menu_frame, text="Help", bootstyle="light")
-    help_menubutton.grid(row=0, column=3, padx=20, pady=10)
+    help_menubutton.grid(row=0, column=3, padx=30, pady=10)
 
      # Create Menu Bar
     actions_menubar = ttkb.Menu(root)
     profile_menubar = ttkb.Menu(root)
     color_mode_menubar = ttkb.Menu(root)
     help_menubar = ttkb.Menu(root)
+    light_themes_menu = ttkb.Menu(color_mode_menubar, tearoff=0)
+    dark_themes_menu = ttkb.Menu(color_mode_menubar, tearoff=0)
     
     # Associate the inside menu with the menubutton
     actions_menubutton['menu'] = actions_menubar
@@ -573,7 +575,33 @@ def init_gui(existing_root):
     # Help menu 
     help_menubar.add_command(label="About", command=lambda: messagebox.showinfo("About", "Weather Forecast Automator\n\nVersion 3.1\n\nCreated by Felipe de Souza"))
 
-    
+    # Dark/Light Mode Cascades
+    color_mode_menubar.add_cascade(label="Light Themes", menu=light_themes_menu)
+    color_mode_menubar.add_cascade(label="Dark Themes", menu=dark_themes_menu)
+
+    # Theme Menu
+    item_var = StringVar()
+
+    # Light themes
+    light_themes = ['pulse', 'minty', 'lumen', 'sandstone', 'simplex', 'cerculean']
+    for theme in light_themes:
+        light_themes_menu.add_radiobutton(
+            label=theme.capitalize(), 
+            variable=item_var,
+            value=theme,
+            command=lambda t=theme: update_bootstyle_theme(t)
+        )
+
+    # Dark themes
+    dark_themes = ['darkly', 'solar', 'superhero']
+    for theme in dark_themes:
+        dark_themes_menu.add_radiobutton(
+            label=theme.capitalize(), 
+            variable=item_var,
+            value=theme,
+            command=lambda t=theme: update_bootstyle_theme(t)
+        )
+
     # Load and set window icon
     try:
         icon_path = "Images/FelipeWeatherAppLogo.png"
@@ -852,6 +880,21 @@ def logout_user():
     # Show login screen again
     from login_screen import LoginScreen
     LoginScreen(root, on_login_success)
+
+# Update the bootstyle theme to the selected menubutton radio option
+def update_bootstyle_theme(theme_name):
+    global root
+    
+    try:
+        # Update the root window theme
+        root.style.theme_use(theme_name)
+        
+        # Refresh all widgets to apply the new theme
+        for widget in root.winfo_children():
+            widget.update()
+            
+    except Exception as e:
+        messagebox.showerror("Theme Error", f"Failed to change theme: {str(e)}")
 
 # Placeholder functions for future implementation
 def view_profile():
