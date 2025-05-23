@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 from ttkbootstrap import Style, Window
@@ -6,6 +7,8 @@ from firebase_config import db
 from auth_controller import create_user
 import re
 from PIL import Image, ImageTk
+
+image_references = {}
 
 class LoginScreen:
     def __init__(self, master, on_login_success):
@@ -19,9 +22,24 @@ class LoginScreen:
         
         # App logo
         try:
+            icon_path = "Images/FelipeWeatherAppLogo.png"
+            if os.path.exists(icon_path):
+                img = Image.open(icon_path)
+                img = img.resize((32, 32), Image.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
+                image_references['icon'] = photo  # Prevent GC
+                self.master.iconphoto(True, photo)
+        except Exception as e:
+            print(f"Could not load window icon: {e}")
+
+
+        try:
             img = Image.open("Images/FelipeWeatherAppLogo.png").resize((150, 150))
             self.logo = ImageTk.PhotoImage(img)
-            ttk.Label(self.main_frame, image=self.logo).pack(side=tk.TOP, pady=10)
+            logo_label=ttk.Label(
+                self.main_frame, 
+                image=self.logo)
+            logo_label.pack(side=tk.TOP, pady=10)
         except Exception as e:
             print(f"Error loading logo: {e}")
         
@@ -52,13 +70,30 @@ class LoginScreen:
     
     def _setup_login_form(self):
         # Email
-        ttk.Label(self.login_frame, bootstyle="inverse-primary", text="Email:").grid(row=0, column=0, sticky="w", pady=5)
-        self.login_email = ttk.Entry(self.login_frame, width=30, bootstyle="primary")
+        email_label = ttk.Label(
+            self.login_frame, 
+            bootstyle="inverse-primary", 
+            text="Email:")
+        email_label.grid(row=0, column=0, sticky="w", pady=5)
+        
+        self.login_email = ttk.Entry(
+            self.login_frame, 
+            width=30, 
+            bootstyle="primary")
         self.login_email.grid(row=0, column=1, pady=5, padx=5)
         
         # Password
-        ttk.Label(self.login_frame, bootstyle="inverse-primary", text="Password:").grid(row=1, column=0, sticky="w", pady=5)
-        self.login_password = ttk.Entry(self.login_frame, bootstyle="primary", width=30, show="*")
+        password_label = ttk.Label(
+            self.login_frame, 
+            bootstyle="inverse-primary", 
+            text="Password:")
+        password_label.grid(row=1, column=0, sticky="w", pady=5)
+        
+        self.login_password = ttk.Entry(
+            self.login_frame, 
+            bootstyle="primary", 
+            width=30, 
+            show="*")
         self.login_password.grid(row=1, column=1, pady=5, padx=5)
         
         # Login Button
@@ -75,28 +110,70 @@ class LoginScreen:
     
     def _setup_register_form(self):
         # Name
-        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Full Name:").grid(row=0, column=0, sticky="w", pady=5)
-        self.reg_name = ttk.Entry(self.register_frame, bootstyle="primary", width=30)
+        name_label = ttk.Label(
+            self.register_frame, 
+            bootstyle="inverse-primary", 
+            text="Full Name:")
+        name_label.grid(row=0, column=0, sticky="w", pady=5)
+        
+        self.reg_name = ttk.Entry(
+            self.register_frame, 
+            bootstyle="primary", 
+            width=30)
         self.reg_name.grid(row=0, column=1, pady=5, padx=5)
         
         # Email
-        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Email:").grid(row=1, column=0, sticky="w", pady=5)
-        self.reg_email = ttk.Entry(self.register_frame, bootstyle="primary", width=30)
+        email_label = ttk.Label(
+            self.register_frame, 
+            bootstyle="inverse-primary", 
+            text="Email:")
+        email_label.grid(row=1, column=0, sticky="w", pady=5)
+        
+        self.reg_email = ttk.Entry(
+            self.register_frame, 
+            bootstyle="primary", 
+            width=30)
         self.reg_email.grid(row=1, column=1, pady=5, padx=5)
         
         # Password
-        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Password:").grid(row=2, column=0, sticky="w", pady=5)
-        self.reg_password = ttk.Entry(self.register_frame, bootstyle="primary", width=30, show="*")
+        password_label=ttk.Label(
+            self.register_frame, 
+            bootstyle="inverse-primary", 
+            text="Password:")
+        password_label.grid(row=2, column=0, sticky="w", pady=5)
+        
+        self.reg_password = ttk.Entry(
+            self.register_frame, 
+            bootstyle="primary", 
+            width=30, 
+            show="*")
         self.reg_password.grid(row=2, column=1, pady=5, padx=5)
         
         # Confirm Password
-        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Confirm Password:").grid(row=3, column=0, sticky="w", pady=5)
-        self.reg_confirm = ttk.Entry(self.register_frame, bootstyle="primary", width=30, show="*")
+        confirm_password_label=ttk.Label(
+            self.register_frame, 
+            bootstyle="inverse-primary", 
+            text="Confirm Password:")
+        confirm_password_label.grid(row=3, column=0, sticky="w", pady=5)
+        
+        self.reg_confirm = ttk.Entry(
+            self.register_frame, 
+            bootstyle="primary", 
+            width=30, 
+            show="*")
         self.reg_confirm.grid(row=3, column=1, pady=5, padx=5)
         
         # Phone (optional)
-        ttk.Label(self.register_frame, bootstyle="inverse-primary", text="Phone (optional):").grid(row=4, column=0, sticky="w", pady=5)
-        self.reg_phone = ttk.Entry(self.register_frame, bootstyle="primary", width=30)
+        phone_label = ttk.Label(
+            self.register_frame, 
+            bootstyle="inverse-primary", 
+            text="Phone (optional):")
+        phone_label.grid(row=4, column=0, sticky="w", pady=5)
+
+        self.reg_phone = ttk.Entry(
+            self.register_frame, 
+            bootstyle="primary", 
+            width=30)
         self.reg_phone.grid(row=4, column=1, pady=5, padx=5)
         
         # Register Button
