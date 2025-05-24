@@ -19,6 +19,8 @@ from ttkbootstrap.constants import *
 from firebase_config import db
 from login_screen import LoginScreen
 import ttkbootstrap as ttkb
+from user_profile import edit_profile, view_profile
+import session_state
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -36,7 +38,8 @@ button_frame = None
 logout_button = None
 description_label_frame = None
 notebook = None
-meter_widgets = []  # To keep references to meter widgets
+meter_widgets = []
+current_user_uid = None  
 
 # Image references to prevent garbage collection
 image_references = {}
@@ -913,7 +916,8 @@ def fetch_country_codes():
 
 # Define on_login_success at the module level
 def on_login_success(uid, user_data):
-    global root, actions_menubar
+    global root, actions_menubar, current_user_uid
+    session_state.current_user_uid = uid
     
     # Destroy login screen widgets
     for widget in root.winfo_children():
@@ -966,13 +970,6 @@ def update_bootstyle_theme(theme_name):
             
     except Exception as e:
         messagebox.showerror("Theme Error", f"Failed to change theme: {str(e)}")
-
-# Placeholder functions for future implementation
-def view_profile():
-    pass
-
-def edit_profile():
-    pass
 
 # Main function to run the application
 def main():
