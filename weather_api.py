@@ -986,8 +986,8 @@ def main():
     root.title("Weather Forecast Automator")
 
     # Set smaller window size for login screen
-    window_width = 475
-    window_height = 625
+    window_width = 500
+    window_height = 700
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
