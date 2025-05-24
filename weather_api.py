@@ -387,7 +387,7 @@ def get_weather():
             display_weather(weather, weather['city'], weather['state'], weather['country'])
         
         export_button_frame.pack(pady=10)
-        root.geometry("900x1000")
+        root.geometry("950x1100")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -579,14 +579,14 @@ def init_gui(existing_root):
     root.title("Weather Forecast Automator")
 
     # Set window size and center it
-    window_width = 900
-    window_height = 1000
+    window_width = 950
+    window_height = 1100
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    root.resizable(False, False) 
+    root.resizable(True, True) 
 
     # Create Menu Frame
     menu_frame = ttk.Frame(main_frame, bootstyle="primary")
@@ -829,8 +829,8 @@ def toggle_results_visibility(show=True):
         result_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
 
         # Create Scrollbar for the entire results frame
-        #scrollbar = ttk.Scrollbar(result_frame, command=)
-        #scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar = ttk.Scrollbar(result_frame, bootstyle="primary-round")
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 10))
 
         # Create notebook widget
         notebook = ttkb.Notebook(result_frame, bootstyle="primary")
@@ -892,7 +892,7 @@ def reset_input_view():
     description_label.pack(side=tk.TOP)
 
     # Reset window size
-    root.geometry("900x1000")
+    root.geometry("950x1100")
 
 # Fetch country codes from Firestore and populate the country entry
 def fetch_country_codes():
@@ -915,7 +915,7 @@ def on_login_success(uid, user_data):
         widget.destroy()
     
     # Resize window for main app
-    root.geometry("900x1000")
+    root.geometry("950x1100")
 
     # Initialize your existing GUI exactly as before
     init_gui(root)
