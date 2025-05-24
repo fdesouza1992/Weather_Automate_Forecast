@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from firebase_config import db
 from firebase_admin import auth
-from session_state import current_user_uid
+import session_state
 from PIL import Image, ImageTk
 
 def view_profile():
@@ -10,7 +10,9 @@ def view_profile():
     profile_window.title("Your Profile")
     profile_window.geometry("500x650")
 
-    user_doc = db.collection("users").document(current_user_uid).get()
+    print(f"Current UID: {session_state.current_user_uid}")
+
+    user_doc = db.collection("users").document(session_state.current_user_uid).get()
     user_data = user_doc.to_dict()
 
     if not user_data:
@@ -57,7 +59,7 @@ def edit_profile():
     edit_window.title("Edit Profile")
     edit_window.geometry("500x700")
 
-    user_ref = db.collection("users").document(current_user_uid)
+    user_ref = db.collection("users").document(session_state.current_user_uid)
     user_doc = user_ref.get()
     user_data = user_doc.to_dict()
 
@@ -108,7 +110,7 @@ def edit_profile():
 
             new_pass = form_vars["new_password"].get().strip()
             if new_pass:
-                auth.update_user(current_user_uid, password=new_pass)
+                auth.update_user(session_state.current_user_uid, password=new_pass)
 
             messagebox.showinfo("Success", "Profile updated successfully!")
             edit_window.destroy()

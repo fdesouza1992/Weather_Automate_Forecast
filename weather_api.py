@@ -39,7 +39,6 @@ logout_button = None
 description_label_frame = None
 notebook = None
 meter_widgets = []
-current_user_uid = None  
 
 # Image references to prevent garbage collection
 image_references = {}
@@ -916,7 +915,8 @@ def fetch_country_codes():
 
 # Define on_login_success at the module level
 def on_login_success(uid, user_data):
-    global root, actions_menubar, current_user_uid
+    global root, actions_menubar
+
     session_state.current_user_uid = uid
     
     # Destroy login screen widgets
@@ -931,6 +931,7 @@ def on_login_success(uid, user_data):
     
     # Optional: Print login confirmation
     print(f"User logged in: {user_data.get('name', 'User')}")
+    print(f"DEBUG::: [LOGIN SUCCESS] UID set to {uid}")
 
 # Logout user and clear session data
 def logout_user():
