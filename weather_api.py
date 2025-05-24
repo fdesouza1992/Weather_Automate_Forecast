@@ -163,10 +163,10 @@ def process_weather_data(data):
         #Atmospheric Data
         "pressure": pressure,
         "humidity": humidity,
-        "dew_point": dew_point,
+        "dew_point": (dew_point* 9/5 + 32),
         "uv_index": round(uv_index,2),
         "clouds": clouds,
-        "visibility": visibility,
+        "visibility": round(visibility / 1609.34, 1) if visibility else 0,
         "sea_level": sea_level,
 
         #Weather Conditions
@@ -247,12 +247,13 @@ def display_weather(weather_info, city_name, state_name, country_code):
         ("Temperature", weather_info['temp_fahrenheit'], 120, "°F", "danger"),
         ("Feels Like", weather_info['feels_like_fahrenheit'], 120, "°F", "warning"),
         ("Humidity", weather_info['humidity'], 100, "%", "info"),
-        ("Pressure", weather_info['pressure'], 32, "inHg", "success"),
+        ("Pressure", weather_info['pressure'], 1110, "inHg", "success"),
         ("UV Index", weather_info['uv_index'], 11, "", "danger"),
         ("Cloudiness", weather_info['clouds'], 100, "%", "secondary"),
         ("Wind Speed", weather_info['wind_speed'], 30, "mph", "primary"),
         ("Wind Gust", weather_info['wind_gust'], 45, "mph", "primary"),
-        ("Dew Point", weather_info['dew_point'], 120, "°F", "info")
+        ("Dew Point", weather_info['dew_point'], 80, "°F", "info"),
+        ("Visibility", weather_info['visibility'], 10, "mi", "success")
     ]
     
     # Create 2x4 grid of meters
@@ -262,11 +263,11 @@ def display_weather(weather_info, city_name, state_name, country_code):
         
         meter = ttkb.Meter(
             meter_frame,
-            metersize=140,
+            metersize=150,
             amountused=value,
             amounttotal=max_val,
             metertype="semi",
-            stripethickness=12,
+            stripethickness=8,
             subtext=title,
             textright=unit,
             interactive=False,
@@ -307,18 +308,21 @@ def display_weather(weather_info, city_name, state_name, country_code):
         info_row = ttk.Frame(col)
         info_row.pack(fill=tk.X, pady=2)
         
-        ttk.Label(
+        info_label=ttk.Label(
             info_row,
             text=label,
             bootstyle="primary",
-            font=("Helvetica", 10, "bold")
-        ).pack(side=tk.LEFT)
+            font=("Helvetica", 12, "bold")
+        )
+        info_label.pack(side=tk.LEFT)
         
-        ttk.Label(
+        value_label=ttk.Label(
             info_row,
             text=value,
-            bootstyle="secondary"
-        ).pack(side=tk.LEFT, padx=5)
+            bootstyle="secondary",
+            font=("Helvetica", 11)
+        )
+        value_label.pack(side=tk.LEFT, padx=5)
 
 # Fetch and display weather for all locations
 def get_weather():
@@ -828,8 +832,8 @@ def toggle_results_visibility(show=True):
         result_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
 
         # Create Scrollbar for the entire results frame
-        scrollbar = ttk.Scrollbar(result_frame, bootstyle="primary-round")
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 10))
+        scrollbar = ttk.Scrollbar(result_frame, orient="vertical", bootstyle="primary-round")
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(5, 10))
 
         # Create notebook widget
         notebook = ttkb.Notebook(result_frame, bootstyle="primary")
