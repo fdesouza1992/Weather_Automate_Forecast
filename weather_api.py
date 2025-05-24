@@ -189,14 +189,15 @@ def process_weather_data(data):
         "current_time": current_time_local.strftime('%H:%M:%S'),
         "current_date": current_time_local.strftime('%Y-%m-%d')
     }
+
 def display_weather(weather_info, city_name, state_name, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
         return
-    
+
     # Create a new tab for this city
     city_tab = ttk.Frame(notebook, padding=10)
-    notebook.add(city_tab, text=f"{city_name.title()}, {country_code.upper()}")
+    notebook.add(city_tab, text=f"{city_name.title()}, {state_name.title()}, {country_code.upper()}")
     
     # Create header frame with city name and weather icon
     header_frame = ttk.Frame(city_tab)
@@ -220,19 +221,21 @@ def display_weather(weather_info, city_name, state_name, country_code):
     title_frame = ttk.Frame(header_frame)
     title_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
     
-    ttk.Label(
+    city_name_label = ttk.Label(
         title_frame,
-        text=f"{city_name.title()}, {country_code.upper()}",
-        font=("Helvetica", 14, "bold"),
+        text=f"{city_name.title()}, {state_name.title()}, {country_code.upper()}",
+        font=("Helvetica", 18, "bold"),
         bootstyle="primary"
-    ).pack(anchor=tk.W)
+    )
+    city_name_label.pack(anchor=tk.W)
     
-    ttk.Label(
+    weather_condition_label = ttk.Label(
         title_frame,
         text=f"{weather_info['condition']} ({weather_info['description']})",
-        font=("Helvetica", 12),
+        font=("Helvetica", 14),
         bootstyle="secondary"
-    ).pack(anchor=tk.W)
+    )
+    weather_condition_label.pack(anchor=tk.W)
     
     # Create meter grid
     meter_frame = ttk.Frame(city_tab)
@@ -253,12 +256,12 @@ def display_weather(weather_info, city_name, state_name, country_code):
     
     # Create 2x4 grid of meters
     for i, (title, value, max_val, unit, style) in enumerate(meter_configs):
-        row = i // 2
-        col = i % 2
+        row = i // 5
+        col = i % 5
         
         meter = ttkb.Meter(
             meter_frame,
-            metersize=180,
+            metersize=140,
             amountused=value,
             amounttotal=max_val,
             metertype="semi",
@@ -568,7 +571,9 @@ def create_weather_image(template_type="post"):
 
 # Initialize the GUI with enhanced styling
 def init_gui(existing_root):
-    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references, logout_button, actions_menubar
+    global root, location_frame, export_button_frame, main_frame, header_frame
+    global description_label_frame, description_label, button_frame
+    global image_references, logout_button, actions_menubar
     
     root = existing_root
     root.title("Weather Forecast Automator")
@@ -771,6 +776,19 @@ def init_gui(existing_root):
     # Export buttons frame
     export_button_frame = ttk.Frame(main_frame)
     
+    # Back to input button
+    back_to_input_button=ttk.Button(
+        export_button_frame,
+        text="← Back to Input",
+        command=lambda: [
+            toggle_results_visibility(show=False),
+            toggle_input_visibility(show=True),
+            reset_input_view()
+        ],
+        bootstyle="warning"
+    )
+    back_to_input_button.pack(side=tk.LEFT, padx=10)
+
     # Export buttons
     export_post = ttk.Button(
         export_button_frame,
@@ -786,6 +804,15 @@ def init_gui(existing_root):
         bootstyle="success")
     export_story.pack(side=tk.LEFT, padx=10)
     
+    # Logout button
+    logout_button=ttk.Button(
+        export_button_frame,
+        text="Logout",
+        command=logout_user,
+        bootstyle="danger"
+    )
+    logout_button.pack(side=tk.LEFT, padx=10)
+    
     # Ensure export buttons are hidden initially
     export_button_frame.pack_forget()
 
@@ -793,42 +820,19 @@ def init_gui(existing_root):
 
 # Show or hide the results and preview sections
 def toggle_results_visibility(show=True):
-    global result_frame, notebook
-    
-    if show and not hasattr(toggle_results_visibility, "results_created"):
+    global result_frame, notebook, description_label_frame        
 
+    if show and not hasattr(toggle_results_visibility, "results_created"):
         result_frame = ttk.Frame(main_frame)
         result_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
-        
+
+        # Create Scrollbar for the entire results frame
+        #scrollbar = ttk.Scrollbar(result_frame, command=)
+        #scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
         # Create notebook widget
         notebook = ttkb.Notebook(result_frame, bootstyle="primary")
-        notebook.pack(fill=tk.BOTH)
-        
-        # Back button frame
-        button_frame = ttk.Frame(result_frame)
-        button_frame.pack(fill=tk.X, pady=10)
-        
-        # Back button
-        back_to_input_button=ttk.Button(
-            button_frame,
-            text="← Back to Input",
-            command=lambda: [
-                toggle_results_visibility(show=False),
-                toggle_input_visibility(show=True),
-                reset_input_view()
-            ],
-            bootstyle="warning"
-        )
-        back_to_input_button.pack(side=tk.LEFT, padx=10)
-        
-        # Logout button
-        logout_button=ttk.Button(
-            button_frame,
-            text="Logout",
-            command=logout_user,
-            bootstyle="danger"
-        )
-        logout_button.pack(side=tk.RIGHT, padx=10)
+        notebook.pack(fill=tk.BOTH, expand=True)
         
         toggle_results_visibility.results_created = True
         
@@ -882,6 +886,9 @@ def reset_input_view():
     # Re-add the initial location input
     add_location_input(location_frame)
     
+    # Show description again when resetting
+    description_label.pack(side=tk.TOP)
+
     # Reset window size
     root.geometry("900x1000")
 
