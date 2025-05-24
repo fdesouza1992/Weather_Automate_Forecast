@@ -58,6 +58,7 @@ def configure():
      
     return True
 
+# Fetch weather data from OpenWeatherMap API with robust error handling
 def fetch_weather_data(city_name, state_name, country_code):
     api_key = os.getenv("API_KEY")
     if not api_key:
@@ -190,6 +191,7 @@ def process_weather_data(data):
         "current_date": current_time_local.strftime('%Y-%m-%d')
     }
 
+# # Display weather information in the GUI
 def display_weather(weather_info, city_name, state_name, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
