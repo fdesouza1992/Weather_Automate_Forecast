@@ -314,7 +314,7 @@ def display_weather(weather_info, city_name, state_name, country_code):
             info_row,
             text=label,
             bootstyle="primary",
-            font=("Helvetica", 12, "bold")
+            font=("Helvetica", 14, "bold")
         )
         info_label.pack(side=tk.LEFT)
         
@@ -322,7 +322,7 @@ def display_weather(weather_info, city_name, state_name, country_code):
             info_row,
             text=value,
             bootstyle="secondary",
-            font=("Helvetica", 11)
+            font=("Helvetica", 13)
         )
         value_label.pack(side=tk.LEFT, padx=5)
 
