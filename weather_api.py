@@ -733,7 +733,7 @@ def init_gui(existing_root):
             "For locations within the United States, be sure to include the full state name (e.g., Canton, Ohio, US). " 
             "Once you're ready, click 'Get Weather' to retrieve the latest forecast details.\n\n" 
             "Tip: Use official two-letter ISO country codes for accurate results (e.g., US, BR, IT)"),
-        wraplength=575,  # Adjust this based on your window size
+        wraplength=775,  
         justify="left",
         font=("Helvetica", 13),
         bootstyle="primary"  
