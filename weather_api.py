@@ -67,9 +67,9 @@ def fetch_weather_data(city_name, state_name, country_code):
     # Step 1: Get coordinates for the city using the Direct Geocoding API
     if country_code == "US":
         # For US, use state abbreviation
-        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&limit=5&appid={api_key}"
+        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&units=metric&limit=5&appid={api_key}"
     else:
-        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{country_code}&limit=5&appid={api_key}"
+        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{country_code}&units=metric&limit=5&appid={api_key}"
 
     try:
         # Get location coordinates
@@ -151,20 +151,20 @@ def process_weather_data(data):
 
     return {
         #Temperature Data
-        "temp_celsius": round(temp, 1),
-        "temp_fahrenheit": round(temp * 9/5 + 32, 1),
-        "feels_like_celsius": round(feels_like, 1),
-        "feels_like_fahrenheit": round(feels_like * 9/5 + 32, 1),
-        "temp_min_celsius": round(temp_min, 1),
-        "temp_min_fahrenheit": round(temp_min * 9/5 + 32, 1),
-        "temp_max_celsius": round(temp_max, 1),
-        "temp_max_fahrenheit": round(temp_max * 9/5 + 32, 1),
+        "temp_celsius": round(temp, 2),
+        "temp_fahrenheit": (temp * 9/5 + 32),
+        "feels_like_celsius": round(feels_like, 2),
+        "feels_like_fahrenheit": (feels_like * 9/5 + 32),
+        "temp_min_celsius": round(temp_min, 2),
+        "temp_min_fahrenheit": (temp_min * 9/5 + 32),
+        "temp_max_celsius": round(temp_max, 2),
+        "temp_max_fahrenheit": round(temp_max * 9/5 + 32, 2),
 
         #Atmospheric Data
         "pressure": pressure,
         "humidity": humidity,
         "dew_point": dew_point,
-        "uv_index": round(uv_index,1),
+        "uv_index": round(uv_index,2),
         "clouds": clouds,
         "visibility": visibility,
         "sea_level": sea_level,
@@ -175,9 +175,9 @@ def process_weather_data(data):
         "icon": icon,
 
         #Wind Data
-        "wind_speed": round(wind_speed, 1),
+        "wind_speed": round(wind_speed, 2),
         "wind_deg": wind_deg,
-        "wind_gust": round(wind_gust, 1),
+        "wind_gust": round(wind_gust, 2),
 
         #Sunrise/Sunset Data
         "sunrise": sunrise_local.strftime('%H:%M:%S'),
@@ -244,14 +244,15 @@ def display_weather(weather_info, city_name, state_name, country_code):
     # Define meter configurations
     meter_configs = [
         # (title, value, max_value, unit, style)
-        ("Temperature", weather_info['temp_celsius'], 50, "°C", "danger"),
-        ("Feels Like", weather_info['feels_like_celsius'], 50, "°C", "warning"),
+        ("Temperature", weather_info['temp_fahrenheit'], 120, "°F", "danger"),
+        ("Feels Like", weather_info['feels_like_fahrenheit'], 120, "°F", "warning"),
         ("Humidity", weather_info['humidity'], 100, "%", "info"),
-        ("Pressure", weather_info['pressure'], 1100, "hPa", "success"),
+        ("Pressure", weather_info['pressure'], 32, "inHg", "success"),
         ("UV Index", weather_info['uv_index'], 11, "", "danger"),
         ("Cloudiness", weather_info['clouds'], 100, "%", "secondary"),
-        ("Wind Speed", weather_info['wind_speed'], 20, "m/s", "primary"),
-        ("Wind Gust", weather_info['wind_gust'], 30, "m/s", "primary")
+        ("Wind Speed", weather_info['wind_speed'], 30, "mph", "primary"),
+        ("Wind Gust", weather_info['wind_gust'], 45, "mph", "primary"),
+        ("Dew Point", weather_info['dew_point'], 120, "°F", "info")
     ]
     
     # Create 2x4 grid of meters
@@ -265,7 +266,7 @@ def display_weather(weather_info, city_name, state_name, country_code):
             amountused=value,
             amounttotal=max_val,
             metertype="semi",
-            stripethickness=10,
+            stripethickness=12,
             subtext=title,
             textright=unit,
             interactive=False,
@@ -284,7 +285,7 @@ def display_weather(weather_info, city_name, state_name, country_code):
         text="Additional Information",
         bootstyle="info"
     )
-    info_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+    info_frame.pack(fill=tk.BOTH, pady=5)
     
     # Create two columns for additional info
     left_col = ttk.Frame(info_frame)
@@ -297,8 +298,6 @@ def display_weather(weather_info, city_name, state_name, country_code):
     infos = [
         ("Sunrise:", weather_info['sunrise']),
         ("Sunset:", weather_info['sunset']),
-        ("Dew Point:", f"{weather_info['dew_point']}°C"),
-        ("Visibility:", f"{weather_info['visibility']/1000:.1f} km" if weather_info['visibility'] else "N/A"),
         ("Timezone:", weather_info['timezone_name']),
         ("Current Time:", f"{weather_info['current_time']} ({weather_info['current_date']})")
     ]
