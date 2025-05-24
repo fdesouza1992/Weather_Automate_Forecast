@@ -674,7 +674,7 @@ def init_gui(existing_root):
             img = Image.open(icon_path)
             img = img.resize((75, 75), Image.LANCZOS)
             photo = ImageTk.PhotoImage(img)
-            image_references['icon'] = photo  # Keep reference
+            image_references['icon'] = photo  
             root.iconphoto(True, photo)
     except Exception as e:
         print(f"Could not load window icon: {e}")
@@ -687,22 +687,24 @@ def init_gui(existing_root):
     try:
         logo_path = "Images/FelipeWeatherAppLogo.png"
         if os.path.exists(logo_path):
-            img = Image.open(logo_path).resize((150, 150), Image.LANCZOS)
+            img = Image.open(logo_path).resize((125, 125), Image.LANCZOS)
             photo = ImageTk.PhotoImage(img)
-            image_references['logo'] = photo  # Keep reference
-            logo_label = ttk.Label(header_frame, image=photo)
-            logo_label.pack(side=tk.LEFT, pady=10, padx=30)
+            image_references['logo'] = photo 
+
     except Exception as e:
         print(f"Could not load logo image: {e}") 
 
     # Title label
     logo_text = ttk.Label(
         header_frame,
-        text="Weather Forecast Generator",
-        font=("Helvetica", 38, "bold"),
+        text="    Weather Forecast Generator",
+        font=("Helvetica", 58, "bold"),
         bootstyle="inverse-primary",
-        wraplength=455,  
+        wraplength=775,  
         justify="center",
+        image=photo,
+        compound=LEFT,
+        padding=(30,0),
     )
     logo_text.pack(side=tk.LEFT, pady=30, padx=50)
 
