@@ -191,7 +191,7 @@ def process_weather_data(data):
         "current_date": current_time_local.strftime('%Y-%m-%d')
     }
 
-# # Display weather information in the GUI
+# Display weather information in the GUI
 def display_weather(weather_info, city_name, state_name, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
