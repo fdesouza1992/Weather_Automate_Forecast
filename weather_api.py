@@ -1,7 +1,7 @@
 import requests
 import json
 import tkinter as tk
-from tkinter import messagebox, filedialog, ttk
+from tkinter import StringVar, messagebox, filedialog, ttk
 from dotenv import load_dotenv
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
@@ -18,6 +18,7 @@ from ttkbootstrap import Window, Style
 from ttkbootstrap.constants import *
 from firebase_config import db
 from login_screen import LoginScreen
+import ttkbootstrap as ttkb
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -34,6 +35,8 @@ description_label = None
 button_frame = None
 logout_button = None
 description_label_frame = None
+notebook = None
+meter_widgets = []  # To keep references to meter widgets
 
 # Image references to prevent garbage collection
 image_references = {}
@@ -65,9 +68,9 @@ def fetch_weather_data(city_name, state_name, country_code):
     # Step 1: Get coordinates for the city using the Direct Geocoding API
     if country_code == "US":
         # For US, use state abbreviation
-        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&limit=5&appid={api_key}"
+        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{state_name},{country_code}&units=metric&limit=5&appid={api_key}"
     else:
-        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{country_code}&limit=5&appid={api_key}"
+        geocode_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name},{country_code}&units=metric&limit=5&appid={api_key}"
 
     try:
         # Get location coordinates
@@ -149,22 +152,22 @@ def process_weather_data(data):
 
     return {
         #Temperature Data
-        "temp_celsius": round(temp, 1),
-        "temp_fahrenheit": round(temp * 9/5 + 32, 1),
-        "feels_like_celsius": round(feels_like, 1),
-        "feels_like_fahrenheit": round(feels_like * 9/5 + 32, 1),
-        "temp_min_celsius": round(temp_min, 1),
-        "temp_min_fahrenheit": round(temp_min * 9/5 + 32, 1),
-        "temp_max_celsius": round(temp_max, 1),
-        "temp_max_fahrenheit": round(temp_max * 9/5 + 32, 1),
+        "temp_celsius": round(temp, 2),
+        "temp_fahrenheit": (temp * 9/5 + 32),
+        "feels_like_celsius": round(feels_like, 2),
+        "feels_like_fahrenheit": (feels_like * 9/5 + 32),
+        "temp_min_celsius": round(temp_min, 2),
+        "temp_min_fahrenheit": (temp_min * 9/5 + 32),
+        "temp_max_celsius": round(temp_max, 2),
+        "temp_max_fahrenheit": round(temp_max * 9/5 + 32, 2),
 
         #Atmospheric Data
         "pressure": pressure,
         "humidity": humidity,
-        "dew_point": dew_point,
-        "uv_index": round(uv_index,1),
+        "dew_point": (dew_point* 9/5 + 32),
+        "uv_index": round(uv_index,2),
         "clouds": clouds,
-        "visibility": visibility,
+        "visibility": round(visibility / 1609.34, 1) if visibility else 0,
         "sea_level": sea_level,
 
         #Weather Conditions
@@ -173,9 +176,9 @@ def process_weather_data(data):
         "icon": icon,
 
         #Wind Data
-        "wind_speed": round(wind_speed, 1),
+        "wind_speed": round(wind_speed, 2),
         "wind_deg": wind_deg,
-        "wind_gust": round(wind_gust, 1),
+        "wind_gust": round(wind_gust, 2),
 
         #Sunrise/Sunset Data
         "sunrise": sunrise_local.strftime('%H:%M:%S'),
@@ -193,102 +196,151 @@ def display_weather(weather_info, city_name, state_name, country_code):
     if not weather_info:
         messagebox.showerror("Error", "City Not Found. Please enter a valid city name.")
         return
-        
-    formatted_city = f"{weather_info['city'].title()}, {weather_info['state'].upper()}, {weather_info['country'].upper()}"
-    
-    result_box.insert(tk.END, f"Weather for {formatted_city}:\n", "heading")
-    icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
 
+    # Create a new tab for this city
+    city_tab = ttk.Frame(notebook, padding=10)
+    notebook.add(city_tab, text=f"{city_name.title()}, {state_name.title()}, {country_code.upper()}")
+    
+    # Create header frame with city name and weather icon
+    header_frame = ttk.Frame(city_tab)
+    header_frame.pack(fill=tk.X, pady=5)
+    
+    # Add weather icon
     try:
-        # Fetch the image data
+        icon_url = f"http://openweathermap.org/img/wn/{weather_info['icon']}@2x.png"
         with urllib.request.urlopen(icon_url) as u:
             raw_data = u.read()
-        
-        # Convert to a format Tkinter can use
         im = Image.open(BytesIO(raw_data))
-        
-        new_size = (50, 50)  # Smaller size
-        im = im.resize(new_size)
-        
-        # Convert to PhotoImage
+        im = im.resize((50, 50))
         photo = ImageTk.PhotoImage(im)
-        
-        # Create a label to display the image
-        icon_label = ttk.Label(
-            result_box, 
-            image=photo)
-        icon_label.image = photo  # Keep a reference!
-        
-        # Insert the image into the text widget
-        result_box.window_create(tk.END, window=icon_label)
-        result_box.insert(tk.END, "  ")
-        
+        icon_label = ttk.Label(header_frame, image=photo)
+        icon_label.image = photo  # Keep reference
+        icon_label.pack(side=tk.LEFT, padx=10)
     except Exception as e:
-        result_box.insert(tk.END, f"[Icon not available] - {str(e)}\n")
-
-    result_box.insert(tk.END, f"{weather_info['temp_celsius']}°C / {weather_info['temp_fahrenheit']}°F\n")
-    result_box.insert(tk.END, "Conditions: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['condition']}\n")
-    result_box.insert(tk.END, "Feels Like: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['feels_like_celsius']}°C / {weather_info['feels_like_fahrenheit']}°F\n")
-    result_box.insert(tk.END, "Min/Max (in °C): ", "bold")
-    result_box.insert(tk.END, f"{weather_info['temp_min_celsius']}°C / {weather_info['temp_max_celsius']}°C\n")
-    result_box.insert(tk.END, "Min/Max (in °F): ", "bold")
-    result_box.insert(tk.END, f"{weather_info['temp_min_fahrenheit']}°F / {weather_info['temp_max_fahrenheit']}°F\n")
-    result_box.insert(tk.END, "UV Index: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['uv_index']}\n")
-    result_box.insert(tk.END, "Description: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['description']}\n")
-    result_box.insert(tk.END, "Wind Speed: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['wind_speed']} m/s\n")
-    result_box.insert(tk.END, "Wind Gust: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['wind_gust']} m/s\n")
-    result_box.insert(tk.END, "Sea Level: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['sea_level']} hPa\n")
-    result_box.insert(tk.END, "Pressure: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['pressure']} hPa\n")
-    result_box.insert(tk.END, "Humidity: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['humidity']}%\n")
-    result_box.insert(tk.END, "Dew Point: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['dew_point']}°C\n")
-    result_box.insert(tk.END, "Sunrise: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['sunrise']}\n")
-    result_box.insert(tk.END, "Sunset: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['sunset']}\n")
-
-    tz_hours = weather_info['timezone'] // 3600
-    tz_sign = '-' if tz_hours < 0 else '+'
-    tz_display = f"UTC/GMT {tz_sign}{abs(tz_hours)} hours"
-
-    result_box.insert(tk.END, "Timezone Name: ", "bold")
-    result_box.insert(tk.END, f"{weather_info['timezone_name']}\n")
-    result_box.insert(tk.END, "Timezone Offset: ", "bold")
-    result_box.insert(tk.END, f"{tz_display}\n")
-    result_box.insert(tk.END, "Current Time (24hrs format): ", "bold")
-    result_box.insert(tk.END, f"{weather_info['current_time']} ({weather_info['current_date']})\n")
-    result_box.insert(tk.END, "\n------------------------------------------------------------------------------\n\n")
+        print(f"Couldn't load weather icon: {e}")
+    
+    # Add city name and condition
+    title_frame = ttk.Frame(header_frame)
+    title_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+    
+    city_name_label = ttk.Label(
+        title_frame,
+        text=f"{city_name.title()}, {state_name.title()}, {country_code.upper()}",
+        font=("Helvetica", 18, "bold"),
+        bootstyle="primary"
+    )
+    city_name_label.pack(anchor=tk.W)
+    
+    weather_condition_label = ttk.Label(
+        title_frame,
+        text=f"{weather_info['condition']} ({weather_info['description']})",
+        font=("Helvetica", 14),
+        bootstyle="secondary"
+    )
+    weather_condition_label.pack(anchor=tk.W)
+    
+    # Create meter grid
+    meter_frame = ttk.Frame(city_tab)
+    meter_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+    
+    # Define meter configurations
+    meter_configs = [
+        # (title, value, max_value, unit, style)
+        ("Temperature", weather_info['temp_fahrenheit'], 120, "°F", "danger"),
+        ("Feels Like", weather_info['feels_like_fahrenheit'], 120, "°F", "warning"),
+        ("Humidity", weather_info['humidity'], 100, "%", "info"),
+        ("Pressure", weather_info['pressure'], 1110, "inHg", "success"),
+        ("UV Index", weather_info['uv_index'], 11, "", "danger"),
+        ("Cloudiness", weather_info['clouds'], 100, "%", "secondary"),
+        ("Wind Speed", weather_info['wind_speed'], 30, "mph", "primary"),
+        ("Wind Gust", weather_info['wind_gust'], 45, "mph", "primary"),
+        ("Dew Point", weather_info['dew_point'], 80, "°F", "info"),
+        ("Visibility", weather_info['visibility'], 10, "mi", "success")
+    ]
+    
+    # Create 2x4 grid of meters
+    for i, (title, value, max_val, unit, style) in enumerate(meter_configs):
+        row = i // 5
+        col = i % 5
+        
+        meter = ttkb.Meter(
+            meter_frame,
+            metersize=150,
+            amountused=value,
+            amounttotal=max_val,
+            metertype="semi",
+            stripethickness=8,
+            subtext=title,
+            textright=unit,
+            interactive=False,
+            bootstyle=style
+        )
+        meter.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+        meter_widgets.append(meter)  # Keep reference
+        
+        # Configure grid weights
+        meter_frame.grid_rowconfigure(row, weight=1)
+        meter_frame.grid_columnconfigure(col, weight=1)
+    
+    # Additional info frame
+    info_frame = ttk.Labelframe(
+        city_tab,
+        text="Additional Information",
+        bootstyle="info"
+    )
+    info_frame.pack(fill=tk.BOTH, pady=5)
+    
+    # Create two columns for additional info
+    left_col = ttk.Frame(info_frame)
+    left_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
+    
+    right_col = ttk.Frame(info_frame)
+    right_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
+    
+    # Add info labels
+    infos = [
+        ("Sunrise:", weather_info['sunrise']),
+        ("Sunset:", weather_info['sunset']),
+        ("Timezone:", weather_info['timezone_name']),
+        ("Current Time:", f"{weather_info['current_time']} ({weather_info['current_date']})")
+    ]
+    
+    for i, (label, value) in enumerate(infos):
+        col = left_col if i % 2 == 0 else right_col
+        info_row = ttk.Frame(col)
+        info_row.pack(fill=tk.X, pady=2)
+        
+        info_label=ttk.Label(
+            info_row,
+            text=label,
+            bootstyle="primary",
+            font=("Helvetica", 12, "bold")
+        )
+        info_label.pack(side=tk.LEFT)
+        
+        value_label=ttk.Label(
+            info_row,
+            text=value,
+            bootstyle="secondary",
+            font=("Helvetica", 11)
+        )
+        value_label.pack(side=tk.LEFT, padx=5)
 
 # Fetch and display weather for all locations
 def get_weather():
-    global current_weather_data
+    global current_weather_data, notebook
     
     if not location_entries:
         messagebox.showerror("Error", "Please add at least one location")
         return
 
-    # Clear previous results
     current_weather_data = []
     any_failures = False
     
     for city_entry, state_entry, country_entry in location_entries:
         city = city_entry.get().strip()
         state = state_entry.get().strip()
-
-        # Handle Combobox and Entry compatibility
-        if isinstance(country_entry, ttk.Combobox):
-            country = country_entry.get().strip().upper()
-        else:
-            country = country_entry.get().strip().upper()
+        country = country_entry.get().strip().upper()
 
         if not city or not country:
             messagebox.showerror("Error", "Please fill all city/country fields")
@@ -298,32 +350,49 @@ def get_weather():
             messagebox.showerror("Error", "Please fill state field for US locations")
             return
         
+        # Fetch weather data with error handling
         weather_data, error_msg = fetch_weather_data(city, state, country)
+        
         if error_msg:
-            messagebox.showerror("Weather Error", error_msg)
+            print(f"Error for {city}, {country}: {error_msg}")  # Debug output
+            messagebox.showerror("Weather Error", 
+                               f"Failed to get weather for {city}, {country}:\n{error_msg}")
             any_failures = True
             continue
             
+        if not weather_data:
+            print(f"No weather data for {city}, {country}")  # Debug output
+            any_failures = True
+            continue
+            
+        # Process the weather data
         weather = process_weather_data(weather_data)
         if weather:
-            location_info = {
+            current_weather_data.append({
                 "city": city,
                 "state": state,
                 "country": country,
-            }
-            current_weather_data.append({**location_info, **weather})
+                **weather  # Merge the weather data
+            })
         else:
             any_failures = True
     
-    # Only show results if we have successful data
+    # Display results if we have data
     if current_weather_data:
         toggle_input_visibility(show=False)
         toggle_results_visibility(show=True)
-        result_box.delete("1.0", tk.END)
+        
+        # Clear existing tabs
+        if notebook:
+            for tab_id in notebook.tabs():
+                notebook.forget(tab_id)
+        
+        # Display weather for each location
         for weather in current_weather_data:
             display_weather(weather, weather['city'], weather['state'], weather['country'])
+        
         export_button_frame.pack(pady=10)
-        root.geometry("675X800")
+        root.geometry("950x1100")
     elif not any_failures:
         messagebox.showinfo("Info", "No weather data to display")
 
@@ -507,21 +576,102 @@ def create_weather_image(template_type="post"):
 
 # Initialize the GUI with enhanced styling
 def init_gui(existing_root):
-    global root, location_frame, export_button_frame, main_frame, header_frame, description_label, button_frame, image_references, logout_button
+    global root, location_frame, export_button_frame, main_frame, header_frame
+    global description_label_frame, description_label, button_frame
+    global image_references, logout_button, actions_menubar
     
     root = existing_root
     root.title("Weather Forecast Automator")
 
     # Set window size and center it
-    window_width = 675
-    window_height = 800
+    window_width = 950
+    window_height = 1100
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    root.resizable(False, False) 
+    root.resizable(True, True) 
+
+    # Create Menu Frame
+    menu_frame = ttk.Frame(main_frame, bootstyle="primary")
+    menu_frame.pack(side=tk.TOP, fill=tk.X)
+
+    # Create Menubuttons
+    help_menubutton = ttkb.Menubutton(menu_frame, text="Help", bootstyle="light")
+    help_menubutton.pack(side=tk.RIGHT, pady=5)
+    color_mode_menubutton = ttkb.Menubutton(menu_frame, text="Theme", bootstyle="light")
+    color_mode_menubutton.pack(side=tk.RIGHT, pady=5)
+    profile_menubutton = ttkb.Menubutton(menu_frame, text="Profile", bootstyle="light")
+    profile_menubutton.pack(side=tk.RIGHT, pady=5)
+    actions_menubutton = ttkb.Menubutton(menu_frame, text="Actions", bootstyle="light")
+    actions_menubutton.pack(side=tk.RIGHT, pady=5)
+
+     # Create Menu Bar
+    actions_menubar = ttkb.Menu(root)
+    profile_menubar = ttkb.Menu(root)
+    color_mode_menubar = ttkb.Menu(root)
+    help_menubar = ttkb.Menu(root)
+    light_themes_menu = ttkb.Menu(color_mode_menubar, tearoff=0)
+    dark_themes_menu = ttkb.Menu(color_mode_menubar, tearoff=0)
     
+    # Associate the inside menu with the menubutton
+    actions_menubutton['menu'] = actions_menubar
+    profile_menubutton['menu'] = profile_menubar
+    color_mode_menubutton['menu'] = color_mode_menubar
+    help_menubutton['menu'] = help_menubar
+
+    # File menu
+    actions_menubar.add_command(label="Add Location", command=lambda: add_location_input(location_frame))
+    actions_menubar.add_command(label="Get Weather", command=get_weather)
+    actions_menubar.add_separator()
+    actions_menubar.add_command(label="Export as Post", command=lambda: create_weather_image("post"))
+    actions_menubar.add_command(label="Export as Story", command=lambda: create_weather_image("story"))
+    actions_menubar.add_separator()
+    actions_menubar.add_command(label="Reset", command=lambda: [
+        reset_input_view(),
+        toggle_results_visibility(show=False),
+        toggle_input_visibility(show=True)
+    ])
+    actions_menubar.add_separator()
+    actions_menubar.add_command(label="Exit", command=root.destroy)
+
+    # Profile Menu
+    profile_menubar.add_command(label="View Profile", command=view_profile)
+    profile_menubar.add_command(label="Edit Profile", command=edit_profile)
+    profile_menubar.add_separator()
+    profile_menubar.add_command(label="Logout", command=logout_user)
+
+    # Help menu 
+    help_menubar.add_command(label="About", command=lambda: messagebox.showinfo("About", "Weather Forecast Automator\n\nVersion 3.1\n\nCreated by Felipe de Souza"))
+
+    # Dark/Light Mode Cascades
+    color_mode_menubar.add_cascade(label="Light Themes", menu=light_themes_menu)
+    color_mode_menubar.add_cascade(label="Dark Themes", menu=dark_themes_menu)
+
+    # Theme Menu
+    item_var = StringVar()
+
+    # Light themes
+    light_themes = ['pulse', 'minty', 'lumen', 'sandstone', 'simplex', 'cerculean']
+    for theme in light_themes:
+        light_themes_menu.add_radiobutton(
+            label=theme.capitalize(), 
+            variable=item_var,
+            value=theme,
+            command=lambda t=theme: update_bootstyle_theme(t)
+        )
+
+    # Dark themes
+    dark_themes = ['darkly', 'solar', 'superhero']
+    for theme in dark_themes:
+        dark_themes_menu.add_radiobutton(
+            label=theme.capitalize(), 
+            variable=item_var,
+            value=theme,
+            command=lambda t=theme: update_bootstyle_theme(t)
+        )
+
     # Load and set window icon
     try:
         icon_path = "Images/FelipeWeatherAppLogo.png"
@@ -529,35 +679,37 @@ def init_gui(existing_root):
             img = Image.open(icon_path)
             img = img.resize((75, 75), Image.LANCZOS)
             photo = ImageTk.PhotoImage(img)
-            image_references['icon'] = photo  # Keep reference
+            image_references['icon'] = photo  
             root.iconphoto(True, photo)
     except Exception as e:
         print(f"Could not load window icon: {e}")
-    
+
     # App Header
     header_frame = ttk.Frame(main_frame, bootstyle="primary")
-    header_frame.pack(fill=tk.X, pady=(10, 20))
+    header_frame.pack(fill=tk.X, pady=(5, 0))
 
     # Load logo image
     try:
         logo_path = "Images/FelipeWeatherAppLogo.png"
         if os.path.exists(logo_path):
-            img = Image.open(logo_path).resize((150, 150), Image.LANCZOS)
+            img = Image.open(logo_path).resize((125, 125), Image.LANCZOS)
             photo = ImageTk.PhotoImage(img)
-            image_references['logo'] = photo  # Keep reference
-            logo_label = ttk.Label(header_frame, image=photo)
-            logo_label.pack(side=tk.LEFT, pady=10, padx=30)
+            image_references['logo'] = photo 
+
     except Exception as e:
         print(f"Could not load logo image: {e}") 
 
     # Title label
     logo_text = ttk.Label(
         header_frame,
-        text="Weather Forecast Generator",
-        font=("Helvetica", 38, "bold"),
+        text="    Weather Forecast Generator",
+        font=("Helvetica", 58, "bold"),
         bootstyle="inverse-primary",
-        wraplength=455,  
+        wraplength=775,  
         justify="center",
+        image=photo,
+        compound=LEFT,
+        padding=(30,0),
     )
     logo_text.pack(side=tk.LEFT, pady=30, padx=50)
 
@@ -566,7 +718,7 @@ def init_gui(existing_root):
     description_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=(0, 10))
 
     # Description label frame with wrapped text
-    description_label_frame = ttk.Labelframe(
+    description_label_frame = ttkb.Labelframe(
         description_frame,
         text="Instructions",  # This is the frame's title
         bootstyle="primary"
@@ -581,7 +733,7 @@ def init_gui(existing_root):
             "For locations within the United States, be sure to include the full state name (e.g., Canton, Ohio, US). " 
             "Once you're ready, click 'Get Weather' to retrieve the latest forecast details.\n\n" 
             "Tip: Use official two-letter ISO country codes for accurate results (e.g., US, BR, IT)"),
-        wraplength=575,  # Adjust this based on your window size
+        wraplength=775,  
         justify="left",
         font=("Helvetica", 13),
         bootstyle="primary"  
@@ -631,6 +783,19 @@ def init_gui(existing_root):
     # Export buttons frame
     export_button_frame = ttk.Frame(main_frame)
     
+    # Back to input button
+    back_to_input_button=ttk.Button(
+        export_button_frame,
+        text="← Back to Input",
+        command=lambda: [
+            toggle_results_visibility(show=False),
+            toggle_input_visibility(show=True),
+            reset_input_view()
+        ],
+        bootstyle="warning"
+    )
+    back_to_input_button.pack(side=tk.LEFT, padx=10)
+
     # Export buttons
     export_post = ttk.Button(
         export_button_frame,
@@ -646,6 +811,15 @@ def init_gui(existing_root):
         bootstyle="success")
     export_story.pack(side=tk.LEFT, padx=10)
     
+    # Logout button
+    logout_button=ttk.Button(
+        export_button_frame,
+        text="Logout",
+        command=logout_user,
+        bootstyle="danger"
+    )
+    logout_button.pack(side=tk.LEFT, padx=10)
+    
     # Ensure export buttons are hidden initially
     export_button_frame.pack_forget()
 
@@ -653,62 +827,30 @@ def init_gui(existing_root):
 
 # Show or hide the results and preview sections
 def toggle_results_visibility(show=True):
-    global result_frame, result_box
-    
+    global result_frame, notebook, description_label_frame        
+
     if show and not hasattr(toggle_results_visibility, "results_created"):
-        # Create frame if it doesn't exist
         result_frame = ttk.Frame(main_frame)
-        result_frame.pack(fill=tk.BOTH, pady=10, padx=10, expand=True)
+        result_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
 
-        # Text results - using tk.Text for better formatting
-        result_box = tk.Text(
-            result_frame,
-            wrap=tk.WORD,
-            font=("Helvetica", 14),
-            height=10,
-            width=60,
-            relief=tk.SUNKEN,
-            bg='white',
-            fg=TEXT_COLOR_DARK,
-            bd=2,
-            padx=10,
-            pady=10
-        )
-        result_box.pack(fill=tk.BOTH, expand=True)
+        # Create Scrollbar for the entire results frame
+        scrollbar = ttk.Scrollbar(result_frame, orient="vertical", bootstyle="primary-round")
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(5, 10))
 
-        # Configure tags for styled text
-        result_box.tag_configure("heading", font=("Helvetica", 18, "bold"))        
-        result_box.tag_configure("bold", font=("Helvetica", 14, "bold"))
+        # Create notebook widget
+        notebook = ttkb.Notebook(result_frame, bootstyle="primary")
+        notebook.pack(fill=tk.BOTH, expand=True)
         
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(result_frame, command=result_box.yview,bootstyle="primary-round")
-        result_box.config(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        result_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        # Back button at the bottom
-        back_button = ttk.Button(
-            result_frame,
-            text="←Back to Input",
-            command=lambda: [
-                toggle_results_visibility(show=False),
-                toggle_input_visibility(show=True),
-                reset_input_view()
-            ],
-            bootstyle="warning"
-        )
-        back_button.pack(pady=5, padx=5)
-
-        # Logout button
-        logout_button = ttk.Button(
-            result_frame,
-            text="Logout",
-            command=logout_user,
-            bootstyle="danger")
-        logout_button.pack(pady=5, padx=5)
-
         toggle_results_visibility.results_created = True
+        
     elif not show and hasattr(toggle_results_visibility, "results_created"):
+        # Clear all tabs and widgets
+        for tab_id in notebook.tabs():
+            notebook.forget(tab_id)
+        
+        # Clear meter widget references
+        meter_widgets.clear()
+        
         result_frame.pack_forget()
 
 # Show or hide the input elements (description, location inputs, buttons)
@@ -724,9 +866,9 @@ def toggle_input_visibility(show=True):
 
 # Reset the input view to its initial state
 def reset_input_view():
-    global current_weather_data, location_entries, input_elements
+    global current_weather_data, location_entries, input_elements, notebook
     
-    # Destroy all widgets in the location_frame to completely reset the input area
+    # Destroy all widgets in the location_frame
     for widget in location_frame.winfo_children():
         widget.destroy()
     
@@ -734,19 +876,28 @@ def reset_input_view():
     location_entries.clear()
     input_elements.clear()
     current_weather_data = []
+    meter_widgets.clear()
+    
+    # Clear notebook tabs if it exists
+    if notebook:
+        for tab_id in notebook.tabs():
+            notebook.forget(tab_id)
     
     # Hide export buttons
     export_button_frame.pack_forget()
 
-    # Clear the result box flag so toggle_results_visibility can recreate it later
+    # Clear the result flag
     if hasattr(toggle_results_visibility, "results_created"):
         del toggle_results_visibility.results_created
     
     # Re-add the initial location input
     add_location_input(location_frame)
     
+    # Show description again when resetting
+    description_label.pack(side=tk.TOP)
+
     # Reset window size
-    root.geometry("675x800")
+    root.geometry("950x1100")
 
 # Fetch country codes from Firestore and populate the country entry
 def fetch_country_codes():
@@ -762,15 +913,15 @@ def fetch_country_codes():
 
 # Define on_login_success at the module level
 def on_login_success(uid, user_data):
-    global root
+    global root, actions_menubar
     
     # Destroy login screen widgets
     for widget in root.winfo_children():
         widget.destroy()
     
     # Resize window for main app
-    root.geometry("675x800")
-    
+    root.geometry("950x1100")
+
     # Initialize your existing GUI exactly as before
     init_gui(root)
     
@@ -801,14 +952,27 @@ def logout_user():
     from login_screen import LoginScreen
     LoginScreen(root, on_login_success)
 
+# Update the bootstyle theme to the selected menubutton radio option
+def update_bootstyle_theme(theme_name):
+    global root
+    
+    try:
+        # Update the root window theme
+        root.style.theme_use(theme_name)
+        
+        # Refresh all widgets to apply the new theme
+        for widget in root.winfo_children():
+            widget.update()
+            
+    except Exception as e:
+        messagebox.showerror("Theme Error", f"Failed to change theme: {str(e)}")
+
 # Placeholder functions for future implementation
 def view_profile():
     pass
 
 def edit_profile():
     pass
-
-
 
 # Main function to run the application
 def main():
@@ -820,7 +984,7 @@ def main():
     # Create root window
     root = Window(themename="pulse")
     root.title("Weather Forecast Automator")
-    
+
     # Set smaller window size for login screen
     window_width = 475
     window_height = 625
@@ -830,10 +994,10 @@ def main():
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     root.resizable(False, False)
-    
+
     # Show login screen first
     LoginScreen(root, on_login_success)
-    
+
     root.mainloop()
 
 if __name__ == "__main__":
