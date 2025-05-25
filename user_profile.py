@@ -34,7 +34,8 @@ def view_profile():
         profile_window.destroy()
         return
 
-    ttk.Label(profile_window, text="User Profile", font=("Helvetica", 18, "bold")).pack(pady=10)
+    display_name = f"{user_data.get("full_name", {}).get("first_name", "")} {user_data.get("full_name", {}).get("last_name", "")}"
+    ttk.Label(profile_window, text=display_name, font=("Helvetica", 18, "bold")).pack(pady=10)
 
     # Placeholder profile icon
     icon_frame = ttk.Frame(profile_window)
@@ -49,8 +50,8 @@ def view_profile():
         ttk.Label(icon_frame, text="[No Profile Image]", font=("Helvetica", 12)).pack()
 
     fields = {
-        "First Name": user_data.get("first_name", ""),
-        "Last Name": user_data.get("last_name", ""),
+        "First Name": user_data.get("full_name", {}).get("first_name", ""),
+        "Last Name": user_data.get("full_name", {}).get("last_name", ""),
         "Email": user_data.get("email", ""),
         "Phone": user_data.get("phone", ""),
         "Street": user_data.get("address", {}).get("street", ""),
