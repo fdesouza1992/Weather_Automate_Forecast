@@ -34,20 +34,39 @@ def view_profile():
         profile_window.destroy()
         return
 
-    display_name = f"{user_data.get("full_name", {}).get("first_name", "")} {user_data.get("full_name", {}).get("last_name", "")}"
-    ttk.Label(profile_window, text=display_name, font=("Helvetica", 18, "bold")).pack(pady=10)
-
-    # Placeholder profile icon
-    icon_frame = ttk.Frame(profile_window)
+     # Placeholder profile icon
+    icon_frame = ttk.Frame(profile_window, bootstyle="primary")
     icon_frame.pack(pady=10)
     try:
         img = Image.open("Images/profile_image_placeholder.png").resize((100, 100))
         photo = ImageTk.PhotoImage(img)
-        label = ttk.Label(icon_frame, image=photo)
+        label = ttk.Label(
+            icon_frame, 
+            image=photo)
         label.image = photo
-        label.pack()
+        label.pack(side=tk.TOP, pady=10)
     except:
-        ttk.Label(icon_frame, text="[No Profile Image]", font=("Helvetica", 12)).pack()
+        no_picture_label=ttk.Label(
+            icon_frame, 
+            text="[No Profile Image]")
+        no_picture_label.pack(side=tk.TOP, pady=10)
+
+    # Display name 
+    display_name = f"{user_data.get("full_name", {}).get("first_name", "")} {user_data.get("full_name", {}).get("last_name", "")} Profile"
+    display_name_label = ttk.Label(
+        profile_window, 
+        text=display_name, 
+        font=("Helvetica", 28, "bold"), 
+        bootstyle="inverse-primary")
+    display_name_label.pack(side=tk.TOP, pady=5)
+
+    #Separator
+    separator = ttk.Separator(profile_window, bootstyle="secondary")
+    separator.pack(side=tk.TOP, fill=tk.X, padx=10, pady=15)
+   
+   # Container for grid layout
+    grid_frame = ttk.Frame(profile_window, bootstyle="primary")
+    grid_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10)
 
     fields = {
         "First Name": user_data.get("full_name", {}).get("first_name", ""),
@@ -61,13 +80,32 @@ def view_profile():
         "Country": user_data.get("address", {}).get("country", "")
     }
 
-    for label, value in fields.items():
-        row = ttk.Frame(profile_window)
-        row.pack(fill=tk.X, pady=4, padx=20)
-        ttk.Label(row, text=f"{label}:", width=15, anchor="w", font=("Helvetica", 11, "bold")).pack(side=tk.LEFT)
-        ttk.Label(row, text=value, font=("Helvetica", 11)).pack(side=tk.LEFT)
+    for i, (label, value) in enumerate(fields.items()):
+        # Label for field name
+        field_name_label= ttk.Label(
+            grid_frame, 
+            text=f"{label}:", 
+            width=15, 
+            anchor="w",
+            font=("bold"), 
+            bootstyle="inverse-primary"
+        )
+        field_name_label.grid(row=i, column=0, sticky="w", padx=(20, 20), pady=10)
 
-    ttk.Button(profile_window, text="Edit Profile", command=lambda: [profile_window.destroy(), edit_profile()]).pack(pady=20)
+        # Label for field value
+        field_value_label=ttk.Label(
+            grid_frame, 
+            text=value, 
+            bootstyle="inverse-primary"
+        )
+        field_value_label.grid(row=i, column=1, sticky="w", padx=(0, 20), pady=10)
+
+    edit_profile_button = ttk.Button(
+        profile_window, 
+        text="Edit Profile", 
+        bootstyle="success",
+        command=lambda: [profile_window.destroy(), edit_profile()]) 
+    edit_profile_button.pack(pady=20)
 
 def edit_profile():
     edit_window = tk.Toplevel()
@@ -109,7 +147,7 @@ def edit_profile():
             label = "New Password"
         else:
             label = key.replace("_", " ").capitalize()
-        frame = ttk.Frame(edit_window)
+        frame = ttk.Frame(edit_window, bootstyle="inverse-primary")
         frame.pack(fill=tk.X, pady=5, padx=20)
         ttk.Label(frame, text=f"{label}:", width=15, anchor="w", font=("Helvetica", 11, "bold")).pack(side=tk.LEFT)
         ttk.Entry(frame, textvariable=var, font=("Helvetica", 11), width=30, show="*" if key == "new_password" else "").pack(side=tk.LEFT)
