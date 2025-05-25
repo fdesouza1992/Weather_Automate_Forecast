@@ -91,8 +91,8 @@ def edit_profile():
         return
 
     form_vars = {
-        "first_name": tk.StringVar(value=user_data.get("first_name", "")),
-        "last_name": tk.StringVar(value=user_data.get("last_name", "")),
+        "first_name": tk.StringVar(value=user_data.get("full_name", {}).get("first_name", "")),
+        "last_name": tk.StringVar(value=user_data.get("full_name", {}).get("last_name", "")),
         "phone": tk.StringVar(value=user_data.get("phone", "")),
         "street": tk.StringVar(value=user_data.get("address", {}).get("street", "")),
         "city": tk.StringVar(value=user_data.get("address", {}).get("city", "")),
@@ -117,8 +117,10 @@ def edit_profile():
     def save_changes():
         try:
             updates = {
-                "first_name": form_vars["first_name"].get().strip(),
-                "last_name": form_vars["last_name"].get().strip(),
+                "full_name": {
+                    "first_name": form_vars["first_name"].get().strip(),
+                    "last_name": form_vars["last_name"].get().strip()
+                },
                 "phone": form_vars["phone"].get().strip(),
                 "address": {
                     "street": form_vars["street"].get().strip(),
