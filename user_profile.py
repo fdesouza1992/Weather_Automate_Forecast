@@ -6,9 +6,23 @@ import session_state
 from PIL import Image, ImageTk
 
 def view_profile():
+    global main_frame, root
+
     profile_window = tk.Toplevel()
+    profile_window.transient()
+    profile_window.grab_set()
+    profile_window.focus_set()
+    profile_window.configure(bg="#f5f5f5")
+
     profile_window.title("Your Profile")
-    profile_window.geometry("500x650")
+    window_width = 500
+    window_height = 700
+    screen_width = profile_window.winfo_screenwidth()
+    screen_height = profile_window.winfo_screenheight()
+    x = (screen_width // 2) - (window_width // 2)
+    y = (screen_height // 2) - (window_height // 2)
+    profile_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    profile_window.resizable(False, False)
 
     print(f"Current UID: {session_state.current_user_uid}")
 
@@ -26,7 +40,7 @@ def view_profile():
     icon_frame = ttk.Frame(profile_window)
     icon_frame.pack(pady=10)
     try:
-        img = Image.open("Images/profile_placeholder.png").resize((100, 100))
+        img = Image.open("Images/profile_image_placeholder.png").resize((100, 100))
         photo = ImageTk.PhotoImage(img)
         label = ttk.Label(icon_frame, image=photo)
         label.image = photo
@@ -52,12 +66,19 @@ def view_profile():
         ttk.Label(row, text=f"{label}:", width=15, anchor="w", font=("Helvetica", 11, "bold")).pack(side=tk.LEFT)
         ttk.Label(row, text=value, font=("Helvetica", 11)).pack(side=tk.LEFT)
 
-    ttk.Button(profile_window, text="Edit Profile", command=lambda: [profile_window.destroy(), __import__('edit_profile').edit_profile()]).pack(pady=20)
+    ttk.Button(profile_window, text="Edit Profile", command=lambda: [profile_window.destroy(), edit_profile()]).pack(pady=20)
 
 def edit_profile():
     edit_window = tk.Toplevel()
     edit_window.title("Edit Profile")
-    edit_window.geometry("500x700")
+    window_width = 500
+    window_height = 700
+    screen_width = edit_window.winfo_screenwidth()
+    screen_height = edit_window.winfo_screenheight()
+    x = (screen_width // 2) - (window_width // 2)
+    y = (screen_height // 2) - (window_height // 2)
+    edit_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    edit_window.resizable(False, False)
 
     user_ref = db.collection("users").document(session_state.current_user_uid)
     user_doc = user_ref.get()
