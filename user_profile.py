@@ -52,7 +52,7 @@ def view_profile():
     ttk.Label(
         main_frame,
         text=display_name,
-        font=("Helvetica", 20, "bold"),
+        font=("Helvetica", 24, "bold"),
         bootstyle="inverse-primary"
     ).pack(pady=(0, 10))
 
@@ -149,6 +149,7 @@ def edit_profile():
         ttk.Entry(frame, textvariable=var, font=("Helvetica", 11), bootstyle="primary", width=30, show="*" if key == "new_password" else "").pack(side=tk.LEFT)
 
     def save_changes():
+        global edit_window
         try:
             updates = {
                 "full_name": {
@@ -175,5 +176,12 @@ def edit_profile():
         except Exception as e:
             messagebox.showerror("Update Error", str(e))
 
-    ttk.Button(edit_window, text="Save Changes", command=save_changes).pack(pady=20)
+    back_to_profile_button = ttk.Button(
+        edit_window, 
+        text="<-Back to Profile", 
+        bootstyle="danger",
+        command=lambda: [edit_window.destroy(), view_profile()]) 
+    back_to_profile_button.pack(side=tk.LEFT, padx=20)
+
+    ttk.Button(edit_window, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=20)
 
