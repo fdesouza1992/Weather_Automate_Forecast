@@ -4,10 +4,27 @@ from urllib.request import urlopen
 from firebase_config import db, bucket
 from firebase_admin import auth
 import session_state
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 import ttkbootstrap as ttkb
 import os
+import ssl
 from io import BytesIO
+import random
+
+def load_profile_image_from_url(url):
+    try:
+        url_with_buster = f"{url}?cache_buster={random.randint(1, 999999)}"
+        context = ssl._create_unverified_context()
+        with urlopen(url_with_buster, context=context) as response:
+            img = Image.open(BytesIO(response.read()))
+            img = ImageOps.exif_transpose(img)  # Handle orientation
+            img = img.resize((125, 125), Image.LANCZOS)  # Resize to 125x125
+            return img
+    except Exception as e:
+        print("Error loading image from URL:", e)
+        img = Image.open("Images/profile_image_placeholder_white.png")
+        img = img.resize((125, 125), Image.LANCZOS)  # Resize to 125x125
+        return img
 
 def view_profile():
     global main_frame, root
@@ -17,7 +34,7 @@ def view_profile():
     profile_window.grab_set()
     profile_window.focus_set()
 
-    # === Fetch user data FIRST ===
+    # Fetch user data first 
     user_doc = db.collection("users").document(session_state.current_user_uid).get()
     user_data = user_doc.to_dict()
 
@@ -41,32 +58,22 @@ def view_profile():
     main_frame = ttk.Frame(profile_window, padding=20, bootstyle="primary")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # === Profile Image ===
-    try:
-        image_url = user_data.get("profile_image_url")
-        if image_url:
-            with urlopen(image_url) as response:
-                img = Image.open(BytesIO(response.read())).resize((125, 125))
-        else:
-            img = Image.open("Images/profile_image_placeholder_white.png").resize((125, 125))
-
-        photo = ImageTk.PhotoImage(img)
-        logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary")
-        logo_label.image = photo
-        logo_label.pack(pady=10)
-    except Exception as e:
-        print("Image load error:", e)
-        ttk.Label(main_frame, text="[No Profile Image]", image=photo, bootstyle="inverse-primary").pack(pady=10)
-
+    # Profile Image
+    img = load_profile_image_from_url(user_data.get("profile_image_url"))
+    photo = ImageTk.PhotoImage(img)
+    logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary")
+    logo_label.image = photo
+    logo_label.pack(pady=10)
 
     # === Now safe to use user_data ===
     display_name = f"{user_data.get('full_name', {}).get('first_name', '')}'s Profile"
-    ttk.Label(
+    display_name_label = ttk.Label(
         main_frame,
         text=display_name,
         font=("Helvetica", 24, "bold"),
         bootstyle="inverse-primary"
-    ).pack(pady=(0, 10))
+    )
+    display_name_label.pack(pady=(0, 10))
 
 #Separator
     separator = ttk.Separator(main_frame, bootstyle="secondary")
@@ -108,12 +115,19 @@ def view_profile():
         )
         field_value_label.grid(row=i, column=1, sticky="w", padx=(0, 20), pady=10)
 
+    back_button = ttk.Button(
+        main_frame, 
+        text="<-Back to Home", 
+        bootstyle="danger",
+        command=lambda: [profile_window.destroy(),])
+    back_button.pack(side=tk.LEFT, padx=10)
+
     edit_profile_button = ttk.Button(
         main_frame, 
         text="Edit Profile", 
         bootstyle="success",
         command=lambda: [profile_window.destroy(), edit_profile()]) 
-    edit_profile_button.pack(pady=20)
+    edit_profile_button.pack(side=tk.LEFT, padx=10)
 
 def edit_profile():
     edit_window = tk.Toplevel()
@@ -278,13 +292,12 @@ def edit_profile():
     button_frame = ttk.Frame(main_frame, bootstyle="primary")
     button_frame.pack(pady=10)
 
-    back_to_profile_button = ttk.Button(
+    cancel_button = ttk.Button(
         button_frame, 
-        text="<-Back to Profile", 
+        text="Cancel", 
         bootstyle="danger",
         command=lambda: [edit_window.destroy(), view_profile()]) 
-    back_to_profile_button.pack(side=tk.LEFT, padx=10)
+    cancel_button.pack(side=tk.LEFT, padx=10)
 
-    save_changes_button = ttk.Button(button_frame, bootstyle="success", text="Save Changes", command=save_changes)
-    save_changes_button.pack(side=tk.LEFT, padx=10)
-
+    save_button = ttk.Button(button_frame, bootstyle="success", text="Save", command=save_changes)
+    save_button.pack(side=tk.LEFT, padx=10)
