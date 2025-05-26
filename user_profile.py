@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from firebase_config import db
+from firebase_config import db, bucket
 from firebase_admin import auth
 import session_state
 from PIL import Image, ImageTk
 import ttkbootstrap as ttkb
 import os
+from io import BytesIO
 
 def view_profile():
     global main_frame, root
@@ -48,7 +49,7 @@ def view_profile():
         logo_label.image = photo
         logo_label.pack(pady=10)
     except:
-        ttk.Label(main_frame, text="[No Profile Image]", bootstyle="inverse-primary").pack(pady=10)
+        ttk.Label(main_frame, text="[No Profile Image]", image=photo, bootstyle="inverse-primary").pack(pady=10)
 
 
     # === Now safe to use user_data ===
@@ -161,14 +162,24 @@ def edit_profile():
             return
 
         try:
+            # Resize locally in memory
             img = Image.open(file_path).resize((125, 125), Image.LANCZOS)
-            save_path = os.path.join("Images", f"{session_state.current_user_uid}_profile.png")
-            img.save(save_path)
 
-            # Update Firestore with path reference (or future image URL)
-            user_ref.update({"profile_image_path": save_path})
+            from io import BytesIO
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")
+            buffer.seek(0)
 
-            messagebox.showinfo("Success", "Profile image updated!")
+            # Upload to Firebase Storage
+            blob_path = f"profile_images/{session_state.current_user_uid}.png"
+            blob = bucket.blob(blob_path)
+            blob.upload_from_file(buffer, content_type="image/png")
+            blob.make_public()
+
+            # Save public URL to Firestore
+            user_ref.update({"profile_image_url": blob.public_url})
+
+            messagebox.showinfo("Success", "Profile image uploaded!")
             edit_window.destroy()
             view_profile()
         except Exception as e:
@@ -184,7 +195,7 @@ def edit_profile():
         logo_label.bind("<Button-1>", lambda e: upload_new_image())
         logo_label.pack(pady=10)
     except:
-        ttk.Label(main_frame, text="[No Profile Image]", bootstyle="inverse-primary").pack(pady=10)
+        ttk.Label(main_frame, text="[No Profile Image]", image=photo, bootstyle="inverse-primary").pack(pady=10)
 
 
     photo_separator = ttk.Separator(main_frame, bootstyle="secondary")
