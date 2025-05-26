@@ -200,7 +200,6 @@ def edit_profile():
         ).grid(row=i, column=1, sticky="w", padx=(0, 15), pady=8)
 
     def save_changes():
-        global edit_window
         try:
             updates = {
                 "full_name": {
