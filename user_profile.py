@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
+from urllib.request import urlopen
 from firebase_config import db, bucket
 from firebase_admin import auth
 import session_state
@@ -42,13 +43,19 @@ def view_profile():
 
     # === Profile Image ===
     try:
-        img_path = user_data.get("profile_image_path") or "Images/profile_image_placeholder_white.png"
-        img = Image.open(img_path).resize((125, 125))
+        image_url = user_data.get("profile_image_url")
+        if image_url:
+            with urlopen(image_url) as response:
+                img = Image.open(BytesIO(response.read())).resize((125, 125))
+        else:
+            img = Image.open("Images/profile_image_placeholder_white.png").resize((125, 125))
+
         photo = ImageTk.PhotoImage(img)
         logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary")
         logo_label.image = photo
         logo_label.pack(pady=10)
-    except:
+    except Exception as e:
+        print("Image load error:", e)
         ttk.Label(main_frame, text="[No Profile Image]", image=photo, bootstyle="inverse-primary").pack(pady=10)
 
 
