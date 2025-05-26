@@ -1,10 +1,11 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from firebase_config import db
 from firebase_admin import auth
 import session_state
 from PIL import Image, ImageTk
 import ttkbootstrap as ttkb
+import os
 
 def view_profile():
     global main_frame, root
@@ -40,13 +41,15 @@ def view_profile():
 
     # === Profile Image ===
     try:
-        img = Image.open("Images/profile_image_placeholder_white.png").resize((100, 100))
+        img_path = user_data.get("profile_image_path") or "Images/profile_image_placeholder_white.png"
+        img = Image.open(img_path).resize((125, 125))
         photo = ImageTk.PhotoImage(img)
         logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary")
         logo_label.image = photo
         logo_label.pack(pady=10)
     except:
         ttk.Label(main_frame, text="[No Profile Image]", bootstyle="inverse-primary").pack(pady=10)
+
 
     # === Now safe to use user_data ===
     display_name = f"{user_data.get('full_name', {}).get('first_name', '')}'s Profile"
@@ -148,14 +151,41 @@ def edit_profile():
     separator.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
      # === Profile Image ===
+
+    def upload_new_image():
+        file_path = filedialog.askopenfilename(
+            title="Select Profile Image",
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg *.webp *.gif")]
+        )
+        if not file_path:
+            return
+
+        try:
+            img = Image.open(file_path).resize((125, 125), Image.LANCZOS)
+            save_path = os.path.join("Images", f"{session_state.current_user_uid}_profile.png")
+            img.save(save_path)
+
+            # Update Firestore with path reference (or future image URL)
+            user_ref.update({"profile_image_path": save_path})
+
+            messagebox.showinfo("Success", "Profile image updated!")
+            edit_window.destroy()
+            view_profile()
+        except Exception as e:
+            messagebox.showerror("Upload Failed", str(e))
+
+    # === Load existing or placeholder image
     try:
-        img = Image.open("Images/profile_image_placeholder_white.png").resize((100, 100))
+        img_path = user_data.get("profile_image_path") or "Images/profile_image_placeholder_white.png"
+        img = Image.open(img_path).resize((125, 125))
         photo = ImageTk.PhotoImage(img)
-        logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary")
+        logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary", cursor="hand2")
         logo_label.image = photo
+        logo_label.bind("<Button-1>", lambda e: upload_new_image())
         logo_label.pack(pady=10)
     except:
         ttk.Label(main_frame, text="[No Profile Image]", bootstyle="inverse-primary").pack(pady=10)
+
 
     photo_separator = ttk.Separator(main_frame, bootstyle="secondary")
     photo_separator.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
