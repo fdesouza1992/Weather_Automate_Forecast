@@ -115,15 +115,19 @@ def view_profile():
         )
         field_value_label.grid(row=i, column=1, sticky="w", padx=(0, 20), pady=10)
 
+    # Create a frame specifically for the buttons
+    button_frame = ttk.Frame(main_frame, bootstyle="primary")
+    button_frame.pack(pady=10)
+
     back_button = ttk.Button(
-        main_frame, 
+        button_frame, 
         text="<-Back to Home", 
         bootstyle="danger",
         command=lambda: [profile_window.destroy(),])
     back_button.pack(side=tk.LEFT, padx=10)
 
     edit_profile_button = ttk.Button(
-        main_frame, 
+        button_frame, 
         text="Edit Profile", 
         bootstyle="success",
         command=lambda: [profile_window.destroy(), edit_profile()]) 
