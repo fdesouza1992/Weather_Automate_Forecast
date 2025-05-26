@@ -55,13 +55,23 @@ def view_profile():
     profile_window.resizable(False, False)
 
     # Main container with purple background
-    main_frame = ttk.Frame(profile_window, padding=20, bootstyle="primary")
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    main_frame = ttk.Frame(
+        profile_window, 
+        padding=20, 
+        bootstyle="primary")
+    main_frame.pack(
+        fill=tk.BOTH, 
+        expand=True)
 
     # Profile Image
     img = load_profile_image_from_url(user_data.get("profile_image_url"))
     photo = ImageTk.PhotoImage(img)
-    logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary")
+
+    logo_label = ttk.Label(
+        main_frame, 
+        image=photo, 
+        bootstyle="inverse-primary")
+    
     logo_label.image = photo
     logo_label.pack(pady=10)
 
@@ -76,12 +86,24 @@ def view_profile():
     display_name_label.pack(pady=(0, 10))
 
 #Separator
-    separator = ttk.Separator(main_frame, bootstyle="secondary")
-    separator.pack(side=tk.TOP, fill=tk.X, padx=10, pady=15)  
+    separator = ttk.Separator(
+        main_frame, 
+        bootstyle="secondary")
+    separator.pack(
+        side=tk.TOP, 
+        fill=tk.X, 
+        padx=10, 
+        pady=15)  
 
  # Container for grid layout
-    grid_frame = ttk.Frame(main_frame, bootstyle="primary")
-    grid_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10)
+    grid_frame = ttk.Frame(
+        main_frame, 
+        bootstyle="primary")
+    grid_frame.pack(
+        side=tk.TOP, 
+        fill=tk.BOTH, 
+        expand=True, 
+        padx=10)
 
     fields = {
         "First Name": user_data.get("full_name", {}).get("first_name", ""),
@@ -105,7 +127,12 @@ def view_profile():
             font=("bold"), 
             bootstyle="inverse-primary"
         )
-        field_name_label.grid(row=i, column=0, sticky="w", padx=(20, 20), pady=10)
+        field_name_label.grid(
+            row=i, 
+            column=0, 
+            sticky="w", 
+            padx=(20, 20), 
+            pady=10)
 
         # Label for field value
         field_value_label=ttk.Label(
@@ -113,10 +140,17 @@ def view_profile():
             text=value, 
             bootstyle="inverse-primary"
         )
-        field_value_label.grid(row=i, column=1, sticky="w", padx=(0, 20), pady=10)
+        field_value_label.grid(
+            row=i, 
+            column=1, 
+            sticky="w", 
+            padx=(0, 20), 
+            pady=10)
 
     # Create a frame specifically for the buttons
-    button_frame = ttk.Frame(main_frame, bootstyle="primary")
+    button_frame = ttk.Frame(
+        main_frame, 
+        bootstyle="primary")
     button_frame.pack(pady=10)
 
     back_button = ttk.Button(
@@ -124,14 +158,18 @@ def view_profile():
         text="<-Back to Home", 
         bootstyle="danger",
         command=lambda: [profile_window.destroy(),])
-    back_button.pack(side=tk.LEFT, padx=10)
+    back_button.pack(
+        side=tk.LEFT, 
+        padx=10)
 
     edit_profile_button = ttk.Button(
         button_frame, 
         text="Edit Profile", 
         bootstyle="success",
         command=lambda: [profile_window.destroy(), edit_profile()]) 
-    edit_profile_button.pack(side=tk.LEFT, padx=10)
+    edit_profile_button.pack(
+        side=tk.LEFT, 
+        padx=10)
 
 def edit_profile():
     edit_window = tk.Toplevel()
@@ -139,6 +177,7 @@ def edit_profile():
     edit_window.grab_set()
     edit_window.focus_set()
 
+    # Fetch user data first
     user_ref = db.collection("users").document(session_state.current_user_uid)
     user_doc = user_ref.get()
     user_data = user_doc.to_dict()
@@ -148,7 +187,7 @@ def edit_profile():
         edit_window.destroy()
         return
 
-    title = f"Edit {user_data.get('full_name', {}).get('first_name', '')}' Profile"
+    title = f"Edit {user_data.get('full_name', {}).get('first_name', '')}'s Profile"
     edit_window.title(title)
     window_width = 550
     window_height = 800
@@ -160,24 +199,35 @@ def edit_profile():
     edit_window.resizable(False, False)
 
     # Main container with purple background
-    main_frame = ttk.Frame(edit_window, padding=20, bootstyle="primary")
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    main_frame = ttk.Frame(
+        edit_window, 
+        padding=20, 
+        bootstyle="primary")
+    main_frame.pack(
+        fill=tk.BOTH, 
+        expand=True)
 
     # === Now safe to use user_data ===
     display_name = f"Edit Profile"
-    ttk.Label(
+    display_name_label = ttk.Label(
         main_frame,
         text=display_name,
         font=("Helvetica", 24, "bold"),
         bootstyle="inverse-primary"
-    ).pack(pady=(0, 10))
+    )
+    display_name_label.pack(pady=(0, 10))
 
     #Separator
-    separator = ttk.Separator(main_frame, bootstyle="secondary")
-    separator.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
-
-     # === Profile Image ===
-
+    separator = ttk.Separator(
+        main_frame, 
+        bootstyle="secondary")
+    separator.pack(
+        side=tk.TOP, 
+        fill=tk.X, 
+        padx=10, 
+        pady=10)
+     
+    # Function to upload new profile image
     def upload_new_image():
         file_path = filedialog.askopenfilename(
             title="Select Profile Image",
@@ -188,9 +238,11 @@ def edit_profile():
 
         try:
             # Resize locally in memory
-            img = Image.open(file_path).resize((125, 125), Image.LANCZOS)
+            img = Image.open(file_path)
+            img = ImageOps.exif_transpose(img)  # Handle orientation
+            img = img.resize((125, 125), Image.LANCZOS)
 
-            from io import BytesIO
+            # Convert to BytesIO for upload
             buffer = BytesIO()
             img.save(buffer, format="PNG")
             buffer.seek(0)
@@ -210,25 +262,39 @@ def edit_profile():
         except Exception as e:
             messagebox.showerror("Upload Failed", str(e))
 
-    # === Load existing or placeholder image
-    try:
-        img_path = user_data.get("profile_image_path") or "Images/profile_image_placeholder_white.png"
-        img = Image.open(img_path).resize((125, 125))
-        photo = ImageTk.PhotoImage(img)
-        logo_label = ttk.Label(main_frame, image=photo, bootstyle="inverse-primary", cursor="hand2")
-        logo_label.image = photo
-        logo_label.bind("<Button-1>", lambda e: upload_new_image())
-        logo_label.pack(pady=10)
-    except:
-        ttk.Label(main_frame, text="[No Profile Image]", image=photo, bootstyle="inverse-primary").pack(pady=10)
+    # Load existing or placeholder image
+    img = load_profile_image_from_url(user_data.get("profile_image_url"))
+    photo = ImageTk.PhotoImage(img)
 
+    logo_label = ttk.Label(
+        main_frame, 
+        image=photo, 
+        bootstyle="inverse-primary", 
+        cursor="hand2")
+    
+    logo_label.image = photo
+    logo_label.bind("<Button-1>", lambda e: upload_new_image())
+    logo_label.pack(pady=10)
 
-    photo_separator = ttk.Separator(main_frame, bootstyle="secondary")
-    photo_separator.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+    # Separator for photo section
+    photo_separator = ttk.Separator(
+        main_frame, 
+        bootstyle="secondary")
+    photo_separator.pack(
+        side=tk.TOP, 
+        fill=tk.X, 
+        padx=10, 
+        pady=10)
 
      # Container for grid layout
-    grid_frame = ttk.Frame(main_frame, bootstyle="primary")
-    grid_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10)
+    grid_frame = ttk.Frame(
+        main_frame, 
+        bootstyle="primary")
+    grid_frame.pack(
+        side=tk.TOP, 
+        fill=tk.BOTH, 
+        expand=True, 
+        padx=10)
 
     form_vars = {
         "first_name": tk.StringVar(value=user_data.get("full_name", {}).get("first_name", "")),
@@ -242,28 +308,41 @@ def edit_profile():
         "new_password": tk.StringVar()
     }
 
+    # Create labels and entry fields for each form variable
     for i, (key, var) in enumerate(form_vars.items()):
         # Determine label text
         label_text = "New Password" if key == "new_password" else key.replace("_", " ").capitalize()
         
         # Create and place the label
-        ttk.Label(
+        field_label = ttk.Label(
             grid_frame,
             text=f"{label_text}:",
             width=15,
             anchor="w",
             font=("bold"),
             bootstyle="inverse-primary"
-        ).grid(row=i, column=0, sticky="w", padx=(10, 15), pady=8)
+        )
+        field_label.grid(
+            row=i, 
+            column=0, 
+            sticky="w", 
+            padx=(10, 15), 
+            pady=8)
 
         # Create and place the entry field
-        ttkb.Entry(
+        field_entry = ttkb.Entry(
             grid_frame,
             textvariable=var,
             width=30,
             bootstyle="primary",
             show="*" if key == "new_password" else ""
-        ).grid(row=i, column=1, sticky="w", padx=(0, 15), pady=8)
+        )
+        field_entry.grid(
+            row=i, 
+            column=1, 
+            sticky="w", 
+            padx=(0, 15), 
+            pady=8)
 
     def save_changes():
         try:
@@ -289,11 +368,14 @@ def edit_profile():
 
             messagebox.showinfo("Success", "Profile updated successfully!")
             edit_window.destroy()
+            view_profile()
         except Exception as e:
             messagebox.showerror("Update Error", str(e))
     
     # Create a frame specifically for the buttons
-    button_frame = ttk.Frame(main_frame, bootstyle="primary")
+    button_frame = ttk.Frame(
+        main_frame, 
+        bootstyle="primary")
     button_frame.pack(pady=10)
 
     cancel_button = ttk.Button(
@@ -301,7 +383,15 @@ def edit_profile():
         text="Cancel", 
         bootstyle="danger",
         command=lambda: [edit_window.destroy(), view_profile()]) 
-    cancel_button.pack(side=tk.LEFT, padx=10)
+    cancel_button.pack(
+        side=tk.LEFT, 
+        padx=10)
 
-    save_button = ttk.Button(button_frame, bootstyle="success", text="Save", command=save_changes)
-    save_button.pack(side=tk.LEFT, padx=10)
+    save_button = ttk.Button(
+        button_frame, 
+        bootstyle="success", 
+        text="Save", 
+        command=save_changes)
+    save_button.pack(
+        side=tk.LEFT, 
+        padx=10)
