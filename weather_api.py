@@ -19,6 +19,8 @@ from ttkbootstrap.constants import *
 from firebase_config import db
 from login_screen import LoginScreen
 import ttkbootstrap as ttkb
+from user_profile import edit_profile, view_profile
+import session_state
 
 # Global variables
 current_weather_data = []  # Now stores multiple locations
@@ -36,7 +38,7 @@ button_frame = None
 logout_button = None
 description_label_frame = None
 notebook = None
-meter_widgets = []  # To keep references to meter widgets
+meter_widgets = []
 
 # Image references to prevent garbage collection
 image_references = {}
@@ -314,7 +316,7 @@ def display_weather(weather_info, city_name, state_name, country_code):
             info_row,
             text=label,
             bootstyle="primary",
-            font=("Helvetica", 12, "bold")
+            font=("Helvetica", 14, "bold")
         )
         info_label.pack(side=tk.LEFT)
         
@@ -322,7 +324,7 @@ def display_weather(weather_info, city_name, state_name, country_code):
             info_row,
             text=value,
             bootstyle="secondary",
-            font=("Helvetica", 11)
+            font=("Helvetica", 13)
         )
         value_label.pack(side=tk.LEFT, padx=5)
 
@@ -538,7 +540,7 @@ def create_weather_image(template_type="post"):
             )
             
             # Temperature
-            temp_text = f"{weather['temp_celsius']}°C"
+            temp_text = f"{weather['temp_fahrenheit']}°F"
             temp_pos = TEMPLATES[template_type]["temp_position"][i]
             draw.text(
                 temp_pos,
@@ -914,6 +916,8 @@ def fetch_country_codes():
 # Define on_login_success at the module level
 def on_login_success(uid, user_data):
     global root, actions_menubar
+
+    session_state.current_user_uid = uid
     
     # Destroy login screen widgets
     for widget in root.winfo_children():
@@ -927,6 +931,7 @@ def on_login_success(uid, user_data):
     
     # Optional: Print login confirmation
     print(f"User logged in: {user_data.get('name', 'User')}")
+    print(f"DEBUG::: [LOGIN SUCCESS] UID set to {uid}")
 
 # Logout user and clear session data
 def logout_user():
@@ -967,13 +972,6 @@ def update_bootstyle_theme(theme_name):
     except Exception as e:
         messagebox.showerror("Theme Error", f"Failed to change theme: {str(e)}")
 
-# Placeholder functions for future implementation
-def view_profile():
-    pass
-
-def edit_profile():
-    pass
-
 # Main function to run the application
 def main():
     global root  # Make root available globally
@@ -986,8 +984,8 @@ def main():
     root.title("Weather Forecast Automator")
 
     # Set smaller window size for login screen
-    window_width = 475
-    window_height = 625
+    window_width = 500
+    window_height = 700
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width // 2) - (window_width // 2)
