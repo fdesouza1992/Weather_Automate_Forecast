@@ -540,7 +540,7 @@ def create_weather_image(template_type="post"):
             )
             
             # Temperature
-            temp_text = f"{weather['temp_celsius']}°C"
+            temp_text = f"{weather['temp_fahrenheit']}°F"
             temp_pos = TEMPLATES[template_type]["temp_position"][i]
             draw.text(
                 temp_pos,
