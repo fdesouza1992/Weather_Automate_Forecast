@@ -155,7 +155,7 @@ def process_weather_data(data):
     return {
         #Temperature Data
         "temp_celsius": round(temp, 2),
-        "temp_fahrenheit": (temp * 9/5 + 32),
+        "temp_fahrenheit": round((temp * 9/5 + 32),1),
         "feels_like_celsius": round(feels_like, 2),
         "feels_like_fahrenheit": (feels_like * 9/5 + 32),
         "temp_min_celsius": round(temp_min, 2),
