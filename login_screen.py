@@ -1,6 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 from ttkbootstrap import Style, Window
 from firebase_admin import auth
 from firebase_config import db
@@ -115,7 +115,19 @@ class LoginScreen:
         
         # Bind Enter key to login
         self.login_password.bind('<Return>', lambda e: self._handle_login())
-    
+
+        # Forgot Password Link
+        forgot_password = ttk.Label(
+            self.login_frame,
+            text="Forgot Password?",
+            #foreground="blue",
+            cursor="hand2",
+            font=("underline"),
+            bootstyle="inverse-info"
+        )
+        forgot_password.grid(row=2, column=1, sticky="e", padx=5)
+        forgot_password.bind("<Button-1>", lambda e: self._handle_password_reset())
+
     def _setup_register_form(self):
         # First Name
         first_name_label = ttk.Label(
@@ -252,6 +264,57 @@ class LoginScreen:
         except Exception as e:
             messagebox.showerror("Error", f"Login failed: {str(e)}")
     
+    # Handles password reset
+    def _handle_password_reset(self):
+        reset_win = tk.Toplevel(self.master)
+        reset_win.title("Reset Password")
+        reset_win.geometry("400x200")
+        reset_win.grab_set()
+        reset_win.transient(self.master)
+
+        # Center window
+        reset_win.update_idletasks()
+        x = (reset_win.winfo_screenwidth() // 2) - (400 // 2)
+        y = (reset_win.winfo_screenheight() // 2) - (200 // 2)
+        reset_win.geometry(f"+{x}+{y}")
+
+        # App logo (optional)
+        try:
+            logo_path = "Images/FelipeWeatherAppLogo.png"
+            if os.path.exists(logo_path):
+                img = Image.open(logo_path).resize((75, 75))
+                photo = ImageTk.PhotoImage(img)
+                image_references['reset_logo'] = photo  # Prevent GC
+                logo = ttk.Label(reset_win, image=photo)
+                logo.pack(pady=10)
+        except Exception as e:
+            print(f"Could not load logo for reset dialog: {e}")
+
+        ttk.Label(reset_win, text="Enter your registered email:", font=("Helvetica", 12)).pack(pady=(0, 10))
+
+        email_entry = ttk.Entry(reset_win, width=35)
+        email_entry.pack(pady=5)
+
+        # Button frame
+        btn_frame = ttk.Frame(reset_win)
+        btn_frame.pack(pady=10)
+
+        def send_reset():
+            email = email_entry.get().strip()
+            if not email:
+                messagebox.showerror("Error", "Please enter a valid email")
+                return
+            try:
+                link = auth.generate_password_reset_link(email)
+                messagebox.showinfo("Password Reset Link", f"A reset link has been generated:\n\n{link}\n\nCopy this link into a browser.")
+                reset_win.destroy()
+            except Exception as e:
+                messagebox.showerror("Reset Error", f"Could not generate reset link:\n{str(e)}")
+
+        ttk.Button(btn_frame, text="Send Reset Link", command=send_reset, bootstyle="success").pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text="Cancel", command=reset_win.destroy, bootstyle="danger").pack(side=tk.LEFT, padx=10)
+
+
     def _handle_register(self):
         first_name = self.reg_first_name.get().strip()
         last_name = self.reg_last_name.get().strip()
@@ -321,3 +384,4 @@ class LoginScreen:
                 
         except Exception as e:
             messagebox.showerror("Error", f"Registration failed: {str(e)}")
+    
