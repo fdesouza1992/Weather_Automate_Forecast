@@ -272,7 +272,7 @@ class LoginScreen:
         reset_win.focus_set()
 
         window_width = 400
-        window_height = 300
+        window_height = 270
         screen_width = reset_win.winfo_screenwidth()
         screen_height = reset_win.winfo_screenheight()
         x = (screen_width // 2) - (window_width // 2)
@@ -280,23 +280,42 @@ class LoginScreen:
         reset_win.geometry(f"{window_width}x{window_height}+{x}+{y}")
         reset_win.resizable(False, False)
 
+        # App Header
+        main_frame = ttk.Frame(
+            reset_win, 
+            bootstyle="primary")
+        
+        main_frame.pack(
+            fill=tk.X, 
+            pady=(5, 0))
+
         # App logo
         try:
-            icon_path = "Images/FelipeWeatherAppLogo.png"
-            if os.path.exists(icon_path):
-                img = Image.open(icon_path)
-                img = img.resize((32, 32), Image.LANCZOS)
-                photo = ImageTk.PhotoImage(img)
-                image_references['icon'] = photo  # Prevent GC
-                self.master.iconphoto(True, photo)
+            logo_path = "Images/FelipeWeatherAppLogo.png"
+            if os.path.exists(logo_path):
+                img = Image.open(logo_path).resize((75, 75))
+                logo_photo = ImageTk.PhotoImage(img)
+                image_references['reset_logo'] = logo_photo  # Prevent GC
+                logo_label = ttk.Label(main_frame, image=logo_photo)
+                logo_label.pack(pady=10)
         except Exception as e:
-            print(f"Could not load window icon: {e}")
+            print(f"Could not load logo: {e}")
 
-        ttk.Label(reset_win, text="Enter your registered email:", font=("Helvetica", 12)).pack(pady=(30, 5))
-        email_entry = ttk.Entry(reset_win, width=35)
+        reset_label=ttk.Label(
+            main_frame, 
+            text="Enter your registered email:",
+            font=("Helvetica", 16, "bold"), 
+            bootstyle="inverse-primary")
+        reset_label.pack(pady=(30, 5))
+
+        email_entry = ttk.Entry(
+            main_frame, 
+            width=35)
         email_entry.pack(pady=5)
 
-        btn_frame = ttk.Frame(reset_win)
+        btn_frame = ttk.Frame(
+            main_frame, 
+            bootstyle="primary")
         btn_frame.pack(pady=20)
 
         def send_reset():
@@ -314,8 +333,19 @@ class LoginScreen:
             else:
                 messagebox.showerror("Reset Failed", f"Error: {error}")
 
-        ttk.Button(btn_frame, text="Send Reset Email", command=send_reset, bootstyle="success").pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=reset_win.destroy, bootstyle="danger").pack(side=tk.LEFT, padx=10)
+        send_email_button=ttk.Button(
+            btn_frame, 
+            text="Send Reset Email", 
+            command=send_reset, 
+            bootstyle="success")
+        send_email_button.pack(side=tk.LEFT, padx=10)
+
+        cancel_button = ttk.Button(
+            btn_frame, 
+            text="Cancel", 
+            command=reset_win.destroy, 
+            bootstyle="danger")
+        cancel_button.pack(side=tk.LEFT, padx=10)
 
 
 
