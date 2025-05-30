@@ -272,47 +272,31 @@ class LoginScreen:
         reset_win.grab_set()
         reset_win.transient(self.master)
 
-        # Center window
-        reset_win.update_idletasks()
-        x = (reset_win.winfo_screenwidth() // 2) - (400 // 2)
-        y = (reset_win.winfo_screenheight() // 2) - (200 // 2)
-        reset_win.geometry(f"+{x}+{y}")
-
-        # App logo (optional)
-        try:
-            logo_path = "Images/FelipeWeatherAppLogo.png"
-            if os.path.exists(logo_path):
-                img = Image.open(logo_path).resize((75, 75))
-                photo = ImageTk.PhotoImage(img)
-                image_references['reset_logo'] = photo  # Prevent GC
-                logo = ttk.Label(reset_win, image=photo)
-                logo.pack(pady=10)
-        except Exception as e:
-            print(f"Could not load logo for reset dialog: {e}")
-
-        ttk.Label(reset_win, text="Enter your registered email:", font=("Helvetica", 12)).pack(pady=(0, 10))
-
+        ttk.Label(reset_win, text="Enter your registered email:", font=("Helvetica", 12)).pack(pady=(30, 5))
         email_entry = ttk.Entry(reset_win, width=35)
         email_entry.pack(pady=5)
 
-        # Button frame
         btn_frame = ttk.Frame(reset_win)
-        btn_frame.pack(pady=10)
+        btn_frame.pack(pady=20)
 
         def send_reset():
             email = email_entry.get().strip()
             if not email:
-                messagebox.showerror("Error", "Please enter a valid email")
+                messagebox.showerror("Error", "Please enter your email")
                 return
-            try:
-                link = auth.generate_password_reset_link(email)
-                messagebox.showinfo("Password Reset Link", f"A reset link has been generated:\n\n{link}\n\nCopy this link into a browser.")
-                reset_win.destroy()
-            except Exception as e:
-                messagebox.showerror("Reset Error", f"Could not generate reset link:\n{str(e)}")
 
-        ttk.Button(btn_frame, text="Send Reset Link", command=send_reset, bootstyle="success").pack(side=tk.LEFT, padx=10)
+            from auth_controller import send_password_reset_email_rest
+            success, error = send_password_reset_email_rest(email)
+
+            if success:
+                messagebox.showinfo("Reset Email Sent", f"A reset email has been sent to:\n{email}")
+                reset_win.destroy()
+            else:
+                messagebox.showerror("Reset Failed", f"Error: {error}")
+
+        ttk.Button(btn_frame, text="Send Reset Email", command=send_reset, bootstyle="success").pack(side=tk.LEFT, padx=10)
         ttk.Button(btn_frame, text="Cancel", command=reset_win.destroy, bootstyle="danger").pack(side=tk.LEFT, padx=10)
+
 
 
     def _handle_register(self):
