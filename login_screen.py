@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox, simpledialog
 from ttkbootstrap import Style, Window
 from firebase_admin import auth
 from firebase_config import db
-from auth_controller import create_user
+from auth_controller import create_user, verify_password
 import re
 from PIL import Image, ImageTk
 
@@ -82,27 +82,27 @@ class LoginScreen:
             self.login_frame, 
             bootstyle="inverse-primary", 
             text="Email:")
-        email_label.grid(row=0, column=0, sticky="w", pady=5)
+        email_label.grid(row=0, column=0, sticky="w", pady=5, padx=10)
         
         self.login_email = ttk.Entry(
             self.login_frame, 
             width=30, 
             bootstyle="primary")
-        self.login_email.grid(row=0, column=1, pady=5, padx=5)
+        self.login_email.grid(row=0, column=1, pady=15, padx=15)
         
         # Password
         password_label = ttk.Label(
             self.login_frame, 
             bootstyle="inverse-primary", 
             text="Password:")
-        password_label.grid(row=1, column=0, sticky="w", pady=5)
+        password_label.grid(row=1, column=0, sticky="w", pady=5, padx=10)
         
         self.login_password = ttk.Entry(
             self.login_frame, 
             bootstyle="primary", 
             width=30, 
             show="*")
-        self.login_password.grid(row=1, column=1, pady=5, padx=5)
+        self.login_password.grid(row=1, column=1, pady=15, padx=15)
         
         # Login Button
         login_btn = ttk.Button(
@@ -111,7 +111,7 @@ class LoginScreen:
             command=self._handle_login,
             bootstyle="success"
         )
-        login_btn.grid(row=2, column=0, columnspan=2, pady=20)
+        login_btn.grid(row=2, column=0, columnspan=3, pady=20)
         
         # Bind Enter key to login
         self.login_password.bind('<Return>', lambda e: self._handle_login())
@@ -230,7 +230,6 @@ class LoginScreen:
             return
         
         try:
-            from auth_controller import verify_password
             uid, error_msg = verify_password(email, password)
             
             if error_msg:
@@ -268,9 +267,30 @@ class LoginScreen:
     def _handle_password_reset(self):
         reset_win = tk.Toplevel(self.master)
         reset_win.title("Reset Password")
-        reset_win.geometry("400x200")
-        reset_win.grab_set()
         reset_win.transient(self.master)
+        reset_win.grab_set()
+        reset_win.focus_set()
+
+        window_width = 400
+        window_height = 300
+        screen_width = reset_win.winfo_screenwidth()
+        screen_height = reset_win.winfo_screenheight()
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        reset_win.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        reset_win.resizable(False, False)
+
+        # App logo
+        try:
+            icon_path = "Images/FelipeWeatherAppLogo.png"
+            if os.path.exists(icon_path):
+                img = Image.open(icon_path)
+                img = img.resize((32, 32), Image.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
+                image_references['icon'] = photo  # Prevent GC
+                self.master.iconphoto(True, photo)
+        except Exception as e:
+            print(f"Could not load window icon: {e}")
 
         ttk.Label(reset_win, text="Enter your registered email:", font=("Helvetica", 12)).pack(pady=(30, 5))
         email_entry = ttk.Entry(reset_win, width=35)

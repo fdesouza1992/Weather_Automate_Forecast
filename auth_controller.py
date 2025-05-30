@@ -88,7 +88,7 @@ def verify_password(email, password):
 
 
 def send_password_reset_email_rest(email):
-    firebase_api_key = os.getenv("FIREBASE_API_KEY")  # Must be in your .env file
+    firebase_api_key = os.getenv("FIREBASE_WEB_API_KEY")  # Must be in your .env file
     url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={firebase_api_key}"
     payload = {
         "requestType": "PASSWORD_RESET",
