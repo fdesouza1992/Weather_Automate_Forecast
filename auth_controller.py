@@ -87,6 +87,21 @@ def verify_password(email, password):
         return None, str(e)
 
 
+def send_password_reset_email_rest(email):
+    firebase_api_key = os.getenv("FIREBASE_WEB_API_KEY")  # Must be in your .env file
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={firebase_api_key}"
+    payload = {
+        "requestType": "PASSWORD_RESET",
+        "email": email
+    }
+
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        return True, None
+    else:
+        return False, response.json().get("error", {}).get("message", "Unknown error")
+
+
 # verify if the user exists
 #def verify_id_token(token):
 #    try:

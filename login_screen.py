@@ -1,10 +1,10 @@
 import os
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 from ttkbootstrap import Style, Window
 from firebase_admin import auth
 from firebase_config import db
-from auth_controller import create_user
+from auth_controller import create_user, verify_password
 import re
 from PIL import Image, ImageTk
 
@@ -82,27 +82,27 @@ class LoginScreen:
             self.login_frame, 
             bootstyle="inverse-primary", 
             text="Email:")
-        email_label.grid(row=0, column=0, sticky="w", pady=5)
+        email_label.grid(row=0, column=0, sticky="w", pady=5, padx=10)
         
         self.login_email = ttk.Entry(
             self.login_frame, 
             width=30, 
             bootstyle="primary")
-        self.login_email.grid(row=0, column=1, pady=5, padx=5)
+        self.login_email.grid(row=0, column=1, pady=15, padx=15)
         
         # Password
         password_label = ttk.Label(
             self.login_frame, 
             bootstyle="inverse-primary", 
             text="Password:")
-        password_label.grid(row=1, column=0, sticky="w", pady=5)
+        password_label.grid(row=1, column=0, sticky="w", pady=5, padx=10)
         
         self.login_password = ttk.Entry(
             self.login_frame, 
             bootstyle="primary", 
             width=30, 
             show="*")
-        self.login_password.grid(row=1, column=1, pady=5, padx=5)
+        self.login_password.grid(row=1, column=1, pady=15, padx=15)
         
         # Login Button
         login_btn = ttk.Button(
@@ -111,11 +111,23 @@ class LoginScreen:
             command=self._handle_login,
             bootstyle="success"
         )
-        login_btn.grid(row=2, column=0, columnspan=2, pady=20)
+        login_btn.grid(row=2, column=0, columnspan=3, pady=20)
         
         # Bind Enter key to login
         self.login_password.bind('<Return>', lambda e: self._handle_login())
-    
+
+        # Forgot Password Link
+        forgot_password = ttk.Label(
+            self.login_frame,
+            text="Forgot Password?",
+            #foreground="blue",
+            cursor="hand2",
+            font=("underline"),
+            bootstyle="inverse-info"
+        )
+        forgot_password.grid(row=2, column=1, sticky="e", padx=5)
+        forgot_password.bind("<Button-1>", lambda e: self._handle_password_reset())
+
     def _setup_register_form(self):
         # First Name
         first_name_label = ttk.Label(
@@ -218,7 +230,6 @@ class LoginScreen:
             return
         
         try:
-            from auth_controller import verify_password
             uid, error_msg = verify_password(email, password)
             
             if error_msg:
@@ -252,6 +263,92 @@ class LoginScreen:
         except Exception as e:
             messagebox.showerror("Error", f"Login failed: {str(e)}")
     
+    # Handles password reset
+    def _handle_password_reset(self):
+        reset_win = tk.Toplevel(self.master)
+        reset_win.title("Reset Password")
+        reset_win.transient(self.master)
+        reset_win.grab_set()
+        reset_win.focus_set()
+
+        window_width = 400
+        window_height = 270
+        screen_width = reset_win.winfo_screenwidth()
+        screen_height = reset_win.winfo_screenheight()
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        reset_win.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        reset_win.resizable(False, False)
+
+        # App Header
+        main_frame = ttk.Frame(
+            reset_win, 
+            bootstyle="primary")
+        
+        main_frame.pack(
+            fill=tk.X, 
+            pady=(5, 0))
+
+        # App logo
+        try:
+            logo_path = "Images/FelipeWeatherAppLogo.png"
+            if os.path.exists(logo_path):
+                img = Image.open(logo_path).resize((75, 75))
+                logo_photo = ImageTk.PhotoImage(img)
+                image_references['reset_logo'] = logo_photo  # Prevent GC
+                logo_label = ttk.Label(main_frame, image=logo_photo)
+                logo_label.pack(pady=10)
+        except Exception as e:
+            print(f"Could not load logo: {e}")
+
+        reset_label=ttk.Label(
+            main_frame, 
+            text="Enter your registered email:",
+            font=("Helvetica", 16, "bold"), 
+            bootstyle="inverse-primary")
+        reset_label.pack(pady=(30, 5))
+
+        email_entry = ttk.Entry(
+            main_frame, 
+            width=35)
+        email_entry.pack(pady=5)
+
+        btn_frame = ttk.Frame(
+            main_frame, 
+            bootstyle="primary")
+        btn_frame.pack(pady=20)
+
+        def send_reset():
+            email = email_entry.get().strip()
+            if not email:
+                messagebox.showerror("Error", "Please enter your email")
+                return
+
+            from auth_controller import send_password_reset_email_rest
+            success, error = send_password_reset_email_rest(email)
+
+            if success:
+                messagebox.showinfo("Reset Email Sent", f"A reset email has been sent to:\n{email}")
+                reset_win.destroy()
+            else:
+                messagebox.showerror("Reset Failed", f"Error: {error}")
+
+        send_email_button=ttk.Button(
+            btn_frame, 
+            text="Send Reset Email", 
+            command=send_reset, 
+            bootstyle="success")
+        send_email_button.pack(side=tk.LEFT, padx=10)
+
+        cancel_button = ttk.Button(
+            btn_frame, 
+            text="Cancel", 
+            command=reset_win.destroy, 
+            bootstyle="danger")
+        cancel_button.pack(side=tk.LEFT, padx=10)
+
+
+
     def _handle_register(self):
         first_name = self.reg_first_name.get().strip()
         last_name = self.reg_last_name.get().strip()
@@ -321,3 +418,4 @@ class LoginScreen:
                 
         except Exception as e:
             messagebox.showerror("Error", f"Registration failed: {str(e)}")
+    
