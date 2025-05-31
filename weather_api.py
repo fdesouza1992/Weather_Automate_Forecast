@@ -200,12 +200,20 @@ def display_weather(weather_info, city_name, state_name, country_code):
         return
 
     # Create a new tab for this city
-    city_tab = ttk.Frame(notebook, padding=10)
-    notebook.add(city_tab, text=f"{city_name.title()}, {state_name.title()}, {country_code.upper()}")
+    city_tab = ttk.Frame(
+        notebook, 
+        padding=10)
+    
+    notebook.add(
+        city_tab, 
+        text=f"{city_name.title()}, {state_name.title()}, {country_code.upper()}")
     
     # Create header frame with city name and weather icon
     header_frame = ttk.Frame(city_tab)
-    header_frame.pack(fill=tk.X, pady=5)
+
+    header_frame.pack(
+        fill=tk.X, 
+        pady=5)
     
     # Add weather icon
     try:
@@ -215,15 +223,26 @@ def display_weather(weather_info, city_name, state_name, country_code):
         im = Image.open(BytesIO(raw_data))
         im = im.resize((50, 50))
         photo = ImageTk.PhotoImage(im)
-        icon_label = ttk.Label(header_frame, image=photo)
+
+        icon_label = ttk.Label(
+            header_frame, 
+            image=photo)
+        
         icon_label.image = photo  # Keep reference
-        icon_label.pack(side=tk.LEFT, padx=10)
+        
+        icon_label.pack(
+            side=tk.LEFT, 
+            padx=10)
     except Exception as e:
         print(f"Couldn't load weather icon: {e}")
     
     # Add city name and condition
     title_frame = ttk.Frame(header_frame)
-    title_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+    title_frame.pack(
+        side=tk.LEFT, 
+        fill=tk.X, 
+        expand=True)
     
     city_name_label = ttk.Label(
         title_frame,
@@ -243,7 +262,10 @@ def display_weather(weather_info, city_name, state_name, country_code):
     
     # Create meter grid
     meter_frame = ttk.Frame(city_tab)
-    meter_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+    meter_frame.pack(
+        fill=tk.BOTH, 
+        expand=True, 
+        pady=10)
     
     # Define meter configurations
     meter_configs = [
@@ -277,12 +299,24 @@ def display_weather(weather_info, city_name, state_name, country_code):
             interactive=False,
             bootstyle=style
         )
-        meter.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+
+        meter.grid(
+            row=row, 
+            column=col, 
+            padx=10, 
+            pady=10, 
+            sticky="nsew")
+        
         meter_widgets.append(meter)  # Keep reference
         
         # Configure grid weights
-        meter_frame.grid_rowconfigure(row, weight=1)
-        meter_frame.grid_columnconfigure(col, weight=1)
+        meter_frame.grid_rowconfigure(
+            row, 
+            weight=1)
+        
+        meter_frame.grid_columnconfigure(
+            col, 
+            weight=1)
     
     # Additional info frame
     info_frame = ttk.Labelframe(
@@ -290,14 +324,29 @@ def display_weather(weather_info, city_name, state_name, country_code):
         text="Additional Information",
         bootstyle="info"
     )
-    info_frame.pack(fill=tk.BOTH, pady=5)
+
+    info_frame.pack(
+        fill=tk.BOTH, 
+        pady=5)
     
     # Create two columns for additional info
     left_col = ttk.Frame(info_frame)
-    left_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+    left_col.pack(
+        side=tk.LEFT, 
+        fill=tk.BOTH, 
+        expand=True, 
+        padx=10, 
+        pady=5)
     
     right_col = ttk.Frame(info_frame)
-    right_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+    right_col.pack(
+        side=tk.LEFT, 
+        fill=tk.BOTH, 
+        expand=True, 
+        padx=10, 
+        pady=5)
     
     # Add info labels
     infos = [
@@ -310,7 +359,9 @@ def display_weather(weather_info, city_name, state_name, country_code):
     for i, (label, value) in enumerate(infos):
         col = left_col if i % 2 == 0 else right_col
         info_row = ttk.Frame(col)
-        info_row.pack(fill=tk.X, pady=2)
+        info_row.pack(
+            fill=tk.X, 
+            pady=2)
         
         info_label=ttk.Label(
             info_row,
@@ -326,7 +377,9 @@ def display_weather(weather_info, city_name, state_name, country_code):
             bootstyle="secondary",
             font=("Helvetica", 13)
         )
-        value_label.pack(side=tk.LEFT, padx=5)
+        value_label.pack(
+            side=tk.LEFT, 
+            padx=5)
 
 # Fetch and display weather for all locations
 def get_weather():
@@ -409,11 +462,16 @@ def add_location_input(parent_frame=None):
     row_frame.pack(pady=5)
     
     # City input
-    ttk.Label(
+    city_label=ttk.Label(
         row_frame, 
         text="City:",
         bootstyle="info", 
-        font=("Helvetica", 14)).grid(row=0, column=0, sticky="w")
+        font=("Helvetica", 14))
+    
+    city_label.grid(
+        row=0, 
+        column=0, 
+        sticky="w")
 
     city_entry = ttk.Entry(
         row_frame,
@@ -421,14 +479,22 @@ def add_location_input(parent_frame=None):
         bootstyle="info", 
         width=18)
     
-    city_entry.grid(row=1, column=0, padx=5)
+    city_entry.grid(
+        row=1, 
+        column=0, 
+        padx=5)
     
     # State input
-    ttk.Label(
+    state_label=ttk.Label(
         row_frame, 
         text="State/Region:",
         bootstyle="info", 
-        font=("Helvetica", 14)).grid(row=0, column=1, sticky="w")
+        font=("Helvetica", 14))
+    
+    state_label.grid(
+        row=0, 
+        column=1, 
+        sticky="w")
     
     state_entry = ttk.Entry(
         row_frame,
@@ -436,14 +502,22 @@ def add_location_input(parent_frame=None):
         bootstyle="info", 
         width=18)
     
-    state_entry.grid(row=1, column=1, padx=10)
+    state_entry.grid(
+        row=1, 
+        column=1, 
+        padx=10)
 
     # Country Input
-    ttk.Label(
+    country_label=ttk.Label(
         row_frame, 
         text="Country Code:",
         bootstyle="info", 
-        font=("Helvetica", 14)).grid(row=0, column=2, sticky="w")
+        font=("Helvetica", 14))
+    
+    country_label.grid(
+        row=0, 
+        column=2, 
+        sticky="w")
     
     country_entry = ttk.Combobox(
         row_frame,
@@ -454,9 +528,15 @@ def add_location_input(parent_frame=None):
         state="readonly")
     
     country_entry.set("US")  # Default to US
-    country_entry.bind("<<ComboboxSelected>>", lambda e: country_entry.set(country_entry.get().upper()))
 
-    country_entry.grid(row=1, column=2, padx=10)
+    country_entry.bind(
+        "<<ComboboxSelected>>", 
+        lambda e: country_entry.set(country_entry.get().upper()))
+
+    country_entry.grid(
+        row=1, 
+        column=2, 
+        padx=10)
     
     # Remove button
     remove_button = ttk.Button(
@@ -468,7 +548,11 @@ def add_location_input(parent_frame=None):
                 input_elements.remove((city_entry, state_entry, country_entry)),
             ],
             bootstyle="danger")
-    remove_button.grid(row=1, column=3, padx=10)        
+    
+    remove_button.grid(
+        row=1, 
+        column=3, 
+        padx=10)        
     
     if len(location_entries) > 0:
         remove_button.config(state="normal")
@@ -596,26 +680,64 @@ def init_gui(existing_root):
     root.resizable(True, True) 
 
     # Create Menu Frame
-    menu_frame = ttk.Frame(main_frame, bootstyle="primary")
-    menu_frame.pack(side=tk.TOP, fill=tk.X)
+    menu_frame = ttk.Frame(
+        main_frame, 
+        bootstyle="primary")
+    
+    menu_frame.pack(
+        side=tk.TOP, 
+        fill=tk.X)
 
     # Create Menubuttons
-    help_menubutton = ttkb.Menubutton(menu_frame, text="Help", bootstyle="light")
-    help_menubutton.pack(side=tk.RIGHT, pady=5)
-    color_mode_menubutton = ttkb.Menubutton(menu_frame, text="Theme", bootstyle="light")
-    color_mode_menubutton.pack(side=tk.RIGHT, pady=5)
-    profile_menubutton = ttkb.Menubutton(menu_frame, text="Profile", bootstyle="light")
-    profile_menubutton.pack(side=tk.RIGHT, pady=5)
-    actions_menubutton = ttkb.Menubutton(menu_frame, text="Actions", bootstyle="light")
-    actions_menubutton.pack(side=tk.RIGHT, pady=5)
+    help_menubutton = ttkb.Menubutton(
+        menu_frame, 
+        text="Help", 
+        bootstyle="light")
+    
+    help_menubutton.pack(
+        side=tk.RIGHT, 
+        pady=5)
+    
+    color_mode_menubutton = ttkb.Menubutton(
+        menu_frame, 
+        text="Theme", 
+        bootstyle="light")
+    
+    color_mode_menubutton.pack(
+        side=tk.RIGHT, 
+        pady=5)
+    
+    profile_menubutton = ttkb.Menubutton(
+        menu_frame, 
+        text="Profile", 
+        bootstyle="light")
+    
+    profile_menubutton.pack(
+        side=tk.RIGHT, 
+        pady=5)
+    
+    actions_menubutton = ttkb.Menubutton(
+        menu_frame, 
+        text="Actions", 
+        bootstyle="light")
+    
+    actions_menubutton.pack(
+        side=tk.RIGHT, 
+        pady=5)
 
      # Create Menu Bar
     actions_menubar = ttkb.Menu(root)
     profile_menubar = ttkb.Menu(root)
     color_mode_menubar = ttkb.Menu(root)
     help_menubar = ttkb.Menu(root)
-    light_themes_menu = ttkb.Menu(color_mode_menubar, tearoff=0)
-    dark_themes_menu = ttkb.Menu(color_mode_menubar, tearoff=0)
+
+    light_themes_menu = ttkb.Menu(
+        color_mode_menubar, 
+        tearoff=0)
+    
+    dark_themes_menu = ttkb.Menu(
+        color_mode_menubar, 
+        tearoff=0)
     
     # Associate the inside menu with the menubutton
     actions_menubutton['menu'] = actions_menubar
@@ -687,8 +809,13 @@ def init_gui(existing_root):
         print(f"Could not load window icon: {e}")
 
     # App Header
-    header_frame = ttk.Frame(main_frame, bootstyle="primary")
-    header_frame.pack(fill=tk.X, pady=(5, 0))
+    header_frame = ttk.Frame(
+        main_frame, 
+        bootstyle="primary")
+    
+    header_frame.pack(
+        fill=tk.X, 
+        pady=(5, 0))
 
     # Load logo image
     try:
@@ -713,11 +840,20 @@ def init_gui(existing_root):
         compound=LEFT,
         padding=(30,0),
     )
-    logo_text.pack(side=tk.LEFT, pady=30, padx=50)
+
+    logo_text.pack(
+        side=tk.LEFT, 
+        pady=30, 
+        padx=50)
 
     # Description Frame
     description_frame = ttk.Frame(main_frame)
-    description_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=(0, 10))
+    
+    description_frame.pack(
+        side=tk.TOP, 
+        fill=tk.X, 
+        padx=10, 
+        pady=(0, 10))
 
     # Description label frame with wrapped text
     description_label_frame = ttkb.Labelframe(
@@ -742,10 +878,16 @@ def init_gui(existing_root):
     )
 
     # Pack the label inside the frame with padding
-    description_label.pack(padx=10, pady=10)
+    description_label.pack(
+        padx=10, 
+        pady=10)
 
     # Pack the frame in the header
-    description_label_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+    description_label_frame.pack(
+        side=tk.TOP, 
+        fill=tk.X, 
+        padx=10, 
+        pady=10)
 
     # Location input frame
     location_frame = ttk.Frame(main_frame)
@@ -764,7 +906,10 @@ def init_gui(existing_root):
         text="+ Add Location",
         command=lambda: add_location_input(),
         bootstyle="primary")
-    add_button.pack(side=tk.LEFT, padx=10)
+    
+    add_button.pack(
+        side=tk.LEFT, 
+        padx=10)
     
     # Get weather button
     weather_button = ttk.Button(
@@ -772,7 +917,10 @@ def init_gui(existing_root):
         text="Get Weather",
         command=get_weather,
         bootstyle="success")
-    weather_button.pack(side=tk.LEFT, padx=10)
+    
+    weather_button.pack(
+        side=tk.LEFT, 
+        padx=10)
     
     # Logout button
     logout_button = ttk.Button(
@@ -780,7 +928,10 @@ def init_gui(existing_root):
         text="Logout",
         command=logout_user,
         bootstyle="danger")
-    logout_button.pack(side=tk.LEFT, padx=10)
+    
+    logout_button.pack(
+        side=tk.LEFT, 
+        padx=10)
 
     # Export buttons frame
     export_button_frame = ttk.Frame(main_frame)
@@ -796,7 +947,10 @@ def init_gui(existing_root):
         ],
         bootstyle="warning"
     )
-    back_to_input_button.pack(side=tk.LEFT, padx=10)
+
+    back_to_input_button.pack(
+        side=tk.LEFT, 
+        padx=10)
 
     # Export buttons
     export_post = ttk.Button(
@@ -804,14 +958,20 @@ def init_gui(existing_root):
         text="Export as Post",
         command=lambda: create_weather_image("post"),
         bootstyle="primary")
-    export_post.pack(side=tk.LEFT, padx=10)
+    
+    export_post.pack(
+        side=tk.LEFT, 
+        padx=10)
     
     export_story = ttk.Button(
         export_button_frame,
         text="Export as Story",
         command=lambda: create_weather_image("story"),
         bootstyle="success")
-    export_story.pack(side=tk.LEFT, padx=10)
+    
+    export_story.pack(
+        side=tk.LEFT, 
+        padx=10)
     
     # Logout button
     logout_button=ttk.Button(
@@ -820,7 +980,10 @@ def init_gui(existing_root):
         command=logout_user,
         bootstyle="danger"
     )
-    logout_button.pack(side=tk.LEFT, padx=10)
+
+    logout_button.pack(
+        side=tk.LEFT,
+        padx=10)
     
     # Ensure export buttons are hidden initially
     export_button_frame.pack_forget()
@@ -833,15 +996,32 @@ def toggle_results_visibility(show=True):
 
     if show and not hasattr(toggle_results_visibility, "results_created"):
         result_frame = ttk.Frame(main_frame)
-        result_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
+
+        result_frame.pack(
+            fill=tk.BOTH, 
+            expand=True, 
+            pady=10, 
+            padx=10)
 
         # Create Scrollbar for the entire results frame
-        scrollbar = ttk.Scrollbar(result_frame, orient="vertical", bootstyle="primary-round")
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(5, 10))
+        scrollbar = ttk.Scrollbar(
+            result_frame, 
+            orient="vertical", 
+            bootstyle="primary-round")
+        
+        scrollbar.pack(
+            side=tk.RIGHT, 
+            fill=tk.Y, 
+            padx=(5, 10))
 
         # Create notebook widget
-        notebook = ttkb.Notebook(result_frame, bootstyle="primary")
-        notebook.pack(fill=tk.BOTH, expand=True)
+        notebook = ttkb.Notebook(
+            result_frame, 
+            bootstyle="primary")
+        
+        notebook.pack(
+            fill=tk.BOTH, 
+            expand=True)
         
         toggle_results_visibility.results_created = True
         
@@ -1008,5 +1188,5 @@ if __name__ == "__main__":
 # customizable templates for social media posts.
 
 # Created by Felipe de Souza
-# Date: 2025-05-19
-# Version: 3.1
+# Date: 2025-05-30
+# Version: 5.2
