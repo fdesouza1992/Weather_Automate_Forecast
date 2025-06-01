@@ -17,8 +17,14 @@ class LoginScreen:
         self.style = Style(theme='pulse')
         
         # Main container frame
-        self.main_frame = ttk.Frame(master, padding="20", bootstyle="primary")
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        self.main_frame = ttk.Frame(
+            master, 
+            padding="20",
+            bootstyle="primary")
+        
+        self.main_frame.pack(
+            fill=tk.BOTH, 
+            expand=True)
         
         # App logo
         try:
@@ -36,10 +42,15 @@ class LoginScreen:
         try:
             img = Image.open("Images/FelipeWeatherAppLogo.png").resize((150, 150))
             self.logo = ImageTk.PhotoImage(img)
+
             logo_label=ttk.Label(
                 self.main_frame, 
                 image=self.logo)
-            logo_label.pack(side=tk.TOP, pady=10)
+            
+            logo_label.pack(
+                side=tk.TOP, 
+                pady=10)
+            
         except Exception as e:
             print(f"Error loading logo: {e}")
         
@@ -50,22 +61,40 @@ class LoginScreen:
             font=("Helvetica", 28, "bold"),
             bootstyle="inverse-primary"
         )
-        title_label.pack(side=tk.TOP, pady=5)
+
+        title_label.pack(
+            side=tk.TOP, 
+            pady=5)
         
         # Separator
         separator = ttk.Separator(self.main_frame)
-        separator.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+        separator.pack(
+            side=tk.TOP, 
+            fill=tk.X, 
+            padx=10, 
+            pady=10)
 
         # Notebook for Login/Register tabs
-        self.notebook = ttk.Notebook(self.main_frame, bootstyle="primary")
-        self.notebook.pack(fill=tk.BOTH, expand=True, pady=20)
+        self.notebook = ttk.Notebook(
+            self.main_frame, 
+            bootstyle="primary")
+        
+        self.notebook.pack(
+            fill=tk.BOTH, 
+            expand=True, 
+            pady=20)
         
         # Login Frame
         self.login_frame = ttk.Frame(
             self.notebook, 
             padding=10, 
             bootstyle="primary")
-        self.notebook.add(self.login_frame, text="Login")
+        
+        self.notebook.add(
+            self.login_frame, 
+            text="Login")
+        
         self._setup_login_form()
         
         # Register Frame
@@ -73,7 +102,11 @@ class LoginScreen:
             self.notebook, 
             padding=10, 
             bootstyle="primary")
-        self.notebook.add(self.register_frame, text="Register")
+        
+        self.notebook.add(
+            self.register_frame,
+            text="Register")
+        
         self._setup_register_form()
     
     def _setup_login_form(self):
@@ -82,27 +115,49 @@ class LoginScreen:
             self.login_frame, 
             bootstyle="inverse-primary", 
             text="Email:")
-        email_label.grid(row=0, column=0, sticky="w", pady=5, padx=10)
+        
+        email_label.grid(
+            row=0, 
+            column=0, 
+            sticky="w", 
+            pady=5, 
+            padx=10)
         
         self.login_email = ttk.Entry(
             self.login_frame, 
             width=30, 
             bootstyle="primary")
-        self.login_email.grid(row=0, column=1, pady=15, padx=15)
+        
+        self.login_email.grid(
+            row=0, 
+            column=1, 
+            pady=15, 
+            padx=15)
         
         # Password
         password_label = ttk.Label(
             self.login_frame, 
             bootstyle="inverse-primary", 
             text="Password:")
-        password_label.grid(row=1, column=0, sticky="w", pady=5, padx=10)
+        
+        password_label.grid(
+            row=1, 
+            column=0, 
+            sticky="w", 
+            pady=5, 
+            padx=10)
         
         self.login_password = ttk.Entry(
             self.login_frame, 
             bootstyle="primary", 
             width=30, 
             show="*")
-        self.login_password.grid(row=1, column=1, pady=15, padx=15)
+        
+        self.login_password.grid(
+            row=1, 
+            column=1, 
+            pady=15, 
+            padx=15)
         
         # Login Button
         login_btn = ttk.Button(
@@ -111,10 +166,17 @@ class LoginScreen:
             command=self._handle_login,
             bootstyle="success"
         )
-        login_btn.grid(row=2, column=0, columnspan=3, pady=20)
+
+        login_btn.grid(
+            row=2, 
+            column=0, 
+            columnspan=3, 
+            pady=20)
         
         # Bind Enter key to login
-        self.login_password.bind('<Return>', lambda e: self._handle_login())
+        self.login_password.bind(
+            '<Return>', 
+            lambda e: self._handle_login())
 
         # Forgot Password Link
         forgot_password = ttk.Label(
@@ -125,8 +187,16 @@ class LoginScreen:
             font=("underline"),
             bootstyle="inverse-info"
         )
-        forgot_password.grid(row=2, column=1, sticky="e", padx=5)
-        forgot_password.bind("<Button-1>", lambda e: self._handle_password_reset())
+
+        forgot_password.grid(
+            row=2, 
+            column=1, 
+            sticky="e", 
+            padx=5)
+        
+        forgot_password.bind(
+            "<Button-1>", 
+            lambda e: self._handle_password_reset())
 
     def _setup_register_form(self):
         # First Name
@@ -134,80 +204,140 @@ class LoginScreen:
             self.register_frame, 
             bootstyle="inverse-primary", 
             text="First Name:")
-        first_name_label.grid(row=0, column=0, sticky="w", pady=5)
+        
+        first_name_label.grid(
+            row=0, 
+            column=0, 
+            sticky="w", 
+            pady=5)
         
         self.reg_first_name = ttk.Entry(
             self.register_frame, 
             bootstyle="primary", 
             width=30)
-        self.reg_first_name.grid(row=0, column=1, pady=5, padx=5)
+        
+        self.reg_first_name.grid(
+            row=0, 
+            column=1, 
+            pady=5, 
+            padx=5)
         
         # Last Name
         last_name_label = ttk.Label(
             self.register_frame, 
             bootstyle="inverse-primary", 
             text="Last Name:")
-        last_name_label.grid(row=1, column=0, sticky="w", pady=5)
+        
+        last_name_label.grid(
+            row=1, 
+            column=0, 
+            sticky="w", 
+            pady=5)
         
         self.reg_last_name = ttk.Entry(
             self.register_frame, 
             bootstyle="primary", 
             width=30)
-        self.reg_last_name.grid(row=1, column=1, pady=5, padx=5)
+        
+        self.reg_last_name.grid(
+            row=1, 
+            column=1, 
+            pady=5, 
+            padx=5)
         
         # Email
         email_label = ttk.Label(
             self.register_frame, 
             bootstyle="inverse-primary", 
             text="Email:")
-        email_label.grid(row=2, column=0, sticky="w", pady=5)
+        
+        email_label.grid(
+            row=2, 
+            column=0, 
+            sticky="w", 
+            pady=5)
         
         self.reg_email = ttk.Entry(
             self.register_frame, 
             bootstyle="primary", 
             width=30)
-        self.reg_email.grid(row=2, column=1, pady=5, padx=5)
+        
+        self.reg_email.grid(
+            row=2, 
+            column=1, 
+            pady=5, 
+            padx=5)
         
         # Password
         password_label=ttk.Label(
             self.register_frame, 
             bootstyle="inverse-primary", 
             text="Password:")
-        password_label.grid(row=3, column=0, sticky="w", pady=5)
+        
+        password_label.grid(
+            row=3, 
+            column=0, 
+            sticky="w", 
+            pady=5)
         
         self.reg_password = ttk.Entry(
             self.register_frame, 
             bootstyle="primary", 
             width=30, 
             show="*")
-        self.reg_password.grid(row=3, column=1, pady=5, padx=5)
+        
+        self.reg_password.grid(
+            row=3, 
+            column=1, 
+            pady=5, 
+            padx=5)
         
         # Confirm Password
         confirm_password_label=ttk.Label(
             self.register_frame, 
             bootstyle="inverse-primary", 
             text="Confirm Password:")
-        confirm_password_label.grid(row=4, column=0, sticky="w", pady=5)
+        
+        confirm_password_label.grid(
+            row=4, 
+            column=0, 
+            sticky="w", 
+            pady=5)
         
         self.reg_confirm = ttk.Entry(
             self.register_frame, 
             bootstyle="primary", 
             width=30, 
             show="*")
-        self.reg_confirm.grid(row=4, column=1, pady=5, padx=5)
+        
+        self.reg_confirm.grid(
+            row=4, 
+            column=1, 
+            pady=5, 
+            padx=5)
         
         # Phone (optional)
         phone_label = ttk.Label(
             self.register_frame, 
             bootstyle="inverse-primary", 
             text="Phone (optional):")
-        phone_label.grid(row=5, column=0, sticky="w", pady=5)
+        
+        phone_label.grid(
+            row=5, 
+            column=0, 
+            sticky="w", 
+            pady=5)
 
         self.reg_phone = ttk.Entry(
             self.register_frame, 
             bootstyle="primary", 
             width=30)
-        self.reg_phone.grid(row=5, column=1, pady=5, padx=5)
+        
+        self.reg_phone.grid(
+            row=5, 
+            column=1, 
+            pady=5, 
+            padx=5)
         
         # Register Button
         register_btn = ttk.Button(
@@ -216,10 +346,17 @@ class LoginScreen:
             command=self._handle_register,
             bootstyle="success"
         )
-        register_btn.grid(row=6, column=0, columnspan=2, pady=20)
+
+        register_btn.grid(
+            row=6, 
+            column=0, 
+            columnspan=2, 
+            pady=20)
         
         # Bind Enter key to register
-        self.reg_confirm.bind('<Return>', lambda e: self._handle_register())
+        self.reg_confirm.bind(
+            '<Return>', 
+            lambda e: self._handle_register())
     
     def _handle_login(self):
         email = self.login_email.get().strip()
@@ -296,7 +433,11 @@ class LoginScreen:
                 img = Image.open(logo_path).resize((75, 75))
                 logo_photo = ImageTk.PhotoImage(img)
                 image_references['reset_logo'] = logo_photo  # Prevent GC
-                logo_label = ttk.Label(main_frame, image=logo_photo)
+
+                logo_label = ttk.Label(
+                    main_frame, 
+                    image=logo_photo)
+                
                 logo_label.pack(pady=10)
         except Exception as e:
             print(f"Could not load logo: {e}")
@@ -306,6 +447,7 @@ class LoginScreen:
             text="Enter your registered email:",
             font=("Helvetica", 16, "bold"), 
             bootstyle="inverse-primary")
+        
         reset_label.pack(pady=(30, 5))
 
         email_entry = ttk.Entry(
@@ -338,16 +480,20 @@ class LoginScreen:
             text="Send Reset Email", 
             command=send_reset, 
             bootstyle="success")
-        send_email_button.pack(side=tk.LEFT, padx=10)
+        
+        send_email_button.pack(
+            side=tk.LEFT, 
+            padx=10)
 
         cancel_button = ttk.Button(
             btn_frame, 
             text="Cancel", 
             command=reset_win.destroy, 
             bootstyle="danger")
-        cancel_button.pack(side=tk.LEFT, padx=10)
-
-
+        
+        cancel_button.pack(
+            side=tk.LEFT, 
+            padx=10)
 
     def _handle_register(self):
         first_name = self.reg_first_name.get().strip()

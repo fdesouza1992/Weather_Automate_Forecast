@@ -59,6 +59,7 @@ def view_profile():
         profile_window, 
         padding=20, 
         bootstyle="primary")
+    
     main_frame.pack(
         fill=tk.BOTH, 
         expand=True)
@@ -83,12 +84,14 @@ def view_profile():
         font=("Helvetica", 24, "bold"),
         bootstyle="inverse-primary"
     )
+
     display_name_label.pack(pady=(0, 10))
 
 #Separator
     separator = ttk.Separator(
         main_frame, 
         bootstyle="secondary")
+    
     separator.pack(
         side=tk.TOP, 
         fill=tk.X, 
@@ -99,6 +102,7 @@ def view_profile():
     grid_frame = ttk.Frame(
         main_frame, 
         bootstyle="primary")
+    
     grid_frame.pack(
         side=tk.TOP, 
         fill=tk.BOTH, 
@@ -127,6 +131,7 @@ def view_profile():
             font=("bold"), 
             bootstyle="inverse-primary"
         )
+
         field_name_label.grid(
             row=i, 
             column=0, 
@@ -140,6 +145,7 @@ def view_profile():
             text=value, 
             bootstyle="inverse-primary"
         )
+
         field_value_label.grid(
             row=i, 
             column=1, 
@@ -151,6 +157,7 @@ def view_profile():
     button_frame = ttk.Frame(
         main_frame, 
         bootstyle="primary")
+    
     button_frame.pack(pady=10)
 
     back_button = ttk.Button(
@@ -158,6 +165,7 @@ def view_profile():
         text="<-Back to Home", 
         bootstyle="danger",
         command=lambda: [profile_window.destroy(),])
+    
     back_button.pack(
         side=tk.LEFT, 
         padx=10)
@@ -167,6 +175,7 @@ def view_profile():
         text="Edit Profile", 
         bootstyle="success",
         command=lambda: [profile_window.destroy(), edit_profile()]) 
+    
     edit_profile_button.pack(
         side=tk.LEFT, 
         padx=10)
@@ -203,24 +212,28 @@ def edit_profile():
         edit_window, 
         padding=20, 
         bootstyle="primary")
+    
     main_frame.pack(
         fill=tk.BOTH, 
         expand=True)
 
     # === Now safe to use user_data ===
     display_name = f"Edit Profile"
+
     display_name_label = ttk.Label(
         main_frame,
         text=display_name,
         font=("Helvetica", 24, "bold"),
         bootstyle="inverse-primary"
     )
+
     display_name_label.pack(pady=(0, 10))
 
     #Separator
     separator = ttk.Separator(
         main_frame, 
         bootstyle="secondary")
+    
     separator.pack(
         side=tk.TOP, 
         fill=tk.X, 
@@ -273,13 +286,18 @@ def edit_profile():
         cursor="hand2")
     
     logo_label.image = photo
-    logo_label.bind("<Button-1>", lambda e: upload_new_image())
+
+    logo_label.bind(
+        "<Button-1>", 
+        lambda e: upload_new_image())
+    
     logo_label.pack(pady=10)
 
     # Separator for photo section
     photo_separator = ttk.Separator(
         main_frame, 
         bootstyle="secondary")
+    
     photo_separator.pack(
         side=tk.TOP, 
         fill=tk.X, 
@@ -290,6 +308,7 @@ def edit_profile():
     grid_frame = ttk.Frame(
         main_frame, 
         bootstyle="primary")
+    
     grid_frame.pack(
         side=tk.TOP, 
         fill=tk.BOTH, 
@@ -322,6 +341,7 @@ def edit_profile():
             font=("bold"),
             bootstyle="inverse-primary"
         )
+
         field_label.grid(
             row=i, 
             column=0, 
@@ -337,6 +357,7 @@ def edit_profile():
             bootstyle="primary",
             show="*" if key == "new_password" else ""
         )
+
         field_entry.grid(
             row=i, 
             column=1, 
@@ -376,13 +397,15 @@ def edit_profile():
     button_frame = ttk.Frame(
         main_frame, 
         bootstyle="primary")
+    
     button_frame.pack(pady=10)
 
     cancel_button = ttk.Button(
         button_frame, 
         text="Cancel", 
         bootstyle="danger",
-        command=lambda: [edit_window.destroy(), view_profile()]) 
+        command=lambda: [edit_window.destroy(), view_profile()])
+    
     cancel_button.pack(
         side=tk.LEFT, 
         padx=10)
@@ -392,6 +415,7 @@ def edit_profile():
         bootstyle="success", 
         text="Save", 
         command=save_changes)
+    
     save_button.pack(
         side=tk.LEFT, 
         padx=10)
